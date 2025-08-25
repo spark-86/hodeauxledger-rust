@@ -1,0 +1,14 @@
+[package]
+name = "usher"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tokio = { version = "1.47.1", features = ["rt-multi-thread", "macros", "net", "io-util", "signal", "time"] }
+hodeauxledger-core = { path = "../hodeauxledger-core" }
+hodeauxledger-proto = { path = "../hodeauxledger-proto" }
+hodeauxledger-io = { path = "../hodeauxledger-io" }
+anyhow = "1.0.99"
+clap = { version = "4.5.45", features = ["derive"] }
+tokio-util = "0.7.16"
+futures = "0.3.31"

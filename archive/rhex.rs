@@ -204,6 +204,10 @@ impl Rhex {
         }
         Ok(())
     }
+
+    pub fn from_bytes(bytes: &[u8]) -> anyhow::Result<Self> {
+        Ok(from_cbor(bytes)?)
+    }
 }
 
 /// --------- Canonical CBOR helpers ---------

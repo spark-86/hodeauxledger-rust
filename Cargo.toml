@@ -1,34 +1,12 @@
-[package]
-name = "hodeauxledger-rust"
-version = "0.1.0"
-edition = "2024"
+[workspace]
+members = [
+    "hodeauxledger-core",
+    "usherd",
+    "keytool",
+    "ledger", 
+    "usher", 
+    "hodeauxledger-proto"
+, "hodeauxledger-io"]
 
-[dependencies]
-rand = "0.8.5"
-chrono = { version = "0.4.37", features = ["clock"] }
-ed25519-dalek = { version = "2.0.0", features = ["rand_core"] }
-serde = { version = "1.0", features = ["derive"] }
-serde_json = "1.0"
-serde_jcs = "0.1.0"
-sha2 = "0.10.5"
-hex = "0.4.3"
-anyhow = "1.0.99"
-blake3 = "1.8.2"
-argon2 = "0.5.3"
-aes-gcm = "0.10.3"
-zeroize = "1.8.1"
-clap = { version = "4.5.45", features = ["derive"] }
-base64 = "0.22.1"
-serde_cbor = "0.11.2"
-serde_bytes = "0.11.17"
-serde_with = "3.14.0"
-serde-big-array = "0.5.1"
-cursive = "0.21.1"
-rusqlite = {version = "0.37.0", features = ["bundled"]}
-owo-colors = "4.2.2"
-tokio = {version = "1.47.1", features = ["full","rt-multi-thread","macros"]}
-tonic = "0.14.1"
-chacha20poly1305 = { version = "0.10.1", features = ["std"] }
-[lib]
-name = "hodeauxledger"
-path = "src/lib.rs"
+resolver = "2"
+

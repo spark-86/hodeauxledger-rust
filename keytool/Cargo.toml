@@ -1,0 +1,14 @@
+[package]
+name = "keytool"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.99"
+clap = { version = "4.5.45", features = ["derive"] }
+blake3 = "1.8.2"
+ed25519-dalek = { version = "2.0.0", features = ["rand_core"] }
+owo-colors = "4.2.2"
+hodeauxledger-core = { path = "../hodeauxledger-core" }
+hodeauxledger-io = { path = "../hodeauxledger-io" }
+

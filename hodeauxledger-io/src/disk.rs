@@ -1,8 +1,9 @@
-use crate::rhex::{Intent, Rhex};
 use aes_gcm::{Aes256Gcm, KeyInit, aead::Aead};
 use anyhow::{Context, Result, anyhow, bail};
 use argon2::{Algorithm, Argon2, Params, Version};
 use ed25519_dalek::SigningKey;
+use hodeauxledger_core::rhex::intent::Intent;
+use hodeauxledger_core::rhex::rhex::Rhex;
 use rand::RngCore;
 use std::{
     fs,
@@ -42,8 +43,8 @@ pub fn save_key(path: &Path, password: &str, signing_key: &SigningKey) -> Result
     }
     let mut salt = [0u8; SALT_LEN];
     let mut nonce = [0u8; NONCE_LEN];
-    rand::thread_rng().fill_bytes(&mut salt);
-    rand::thread_rng().fill_bytes(&mut nonce);
+    rand::rng().fill_bytes(&mut salt);
+    rand::rng().fill_bytes(&mut nonce);
 
     let mut aes_key = derive_key(password, &salt)?;
     let cipher = Aes256Gcm::new_from_slice(&aes_key).context("bad AES key")?;
@@ -121,6 +122,11 @@ pub fn load_rhex(path: &PathBuf) -> Result<Rhex> {
     let rhex: Rhex = serde_cbor::from_slice(&data)
         .with_context(|| format!("deserialize Rhex from CBOR for {:?}", path))?;
     Ok(rhex)
+}
+
+pub fn load_raw_rhex(path: &PathBuf) -> Result<Vec<u8>> {
+    let data = fs::read(path)?;
+    Ok(data)
 }
 
 pub fn load_scope(dir: &str) -> Result<Vec<Rhex>> {
@@ -210,4 +216,15 @@ pub fn save_intent(path: &str, intent: &Intent) -> Result<()> {
     fs::write(&tmp, rhex_bytes).with_context(|| format!("write temp Rhex file {:?}", tmp))?;
     fs::rename(&tmp, p).with_context(|| format!("rename {:?} -> {:?}", tmp, p))?;
     Ok(())
+}
+
+pub fn get_scope_table(ledger_path: &str) -> Result<serde_json::Value> {
+    if ledger_path.is_empty() {
+        anyhow::bail!("empty path");
+    }
+    let mut filename = PathBuf::from(ledger_path);
+    filename.push("scope_table.json");
+    let table = fs::read_to_string(&filename)?;
+    let output = serde_json::from_str(&table)?;
+    Ok(output)
 }

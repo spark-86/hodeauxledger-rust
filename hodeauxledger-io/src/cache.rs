@@ -3,7 +3,7 @@ use rusqlite::{Connection, params};
 use serde_json::Value;
 use std::convert::TryInto;
 
-use crate::Rhex;
+use hodeauxledger_core::Rhex;
 
 pub fn store_key(
     conn: &Connection,
@@ -137,7 +137,7 @@ pub fn retrieve_rhex(conn: &Connection, current_hash: &[u8; 32]) -> anyhow::Resu
 
     let mut out_rhex = Rhex {
         magic: *b"RHEX\x01\x00",
-        intent: crate::rhex::Intent {
+        intent: hodeauxledger_core::rhex::intent::Intent {
             previous_hash: [0u8; 32],
             scope: String::new(),
             nonce: String::new(),
@@ -146,7 +146,7 @@ pub fn retrieve_rhex(conn: &Connection, current_hash: &[u8; 32]) -> anyhow::Resu
             record_type: String::new(),
             data: Value::Null,
         },
-        context: crate::rhex::Context { at: 0 },
+        context: hodeauxledger_core::rhex::context::Context { at: 0 },
         signatures: Vec::new(),
         current_hash: None,
     };

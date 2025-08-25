@@ -1,13 +1,12 @@
 use anyhow::Context;
-use cursive::backends::crossterm::crossterm::style::Stylize;
+use clap::Parser;
 use ed25519_dalek::ed25519::signature::Verifier;
 use ed25519_dalek::{Signature as DalekSig, VerifyingKey};
-use hodeauxledger::key::{verify_as_author, verify_as_quorum, verify_as_usher};
+use hodeauxledger_core::crypto::key;
+use hodeauxledger_core::{Signature as RhexSignature, to_base64};
+use hodeauxledger_io::disk;
+use owo_colors::OwoColorize;
 use std::path::Path; // brings .verify() into scope
-
-use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
-use clap::Parser;
-use hodeauxledger::{disk, key, rhex::Signature as RhexSignature};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -64,9 +63,9 @@ fn generate_key(args: Cli) -> Result<(), anyhow::Error> {
     let sk = key::sk64_to_signing_key(&sk64);
     let pk = sk.verifying_key();
     if !quiet {
-        println!("Public key: {}", URL_SAFE_NO_PAD.encode(pk.to_bytes()));
+        println!("Public key: {}", to_base64(&pk.to_bytes()));
         if show_private_key {
-            println!("Private key: {}", URL_SAFE_NO_PAD.encode(sk64));
+            println!("Private key: {}", to_base64(&sk64));
         }
     }
     if verbose {
@@ -87,15 +86,9 @@ fn view_key(args: Cli) -> Result<(), anyhow::Error> {
     let keyfile = args.load.unwrap_or("".to_string());
     let password = args.password.unwrap_or("".to_string());
     let sk = disk::load_key(&keyfile, &password)?;
-    println!(
-        "Public key: {}",
-        URL_SAFE_NO_PAD.encode(sk.verifying_key().to_bytes())
-    );
+    println!("Public key: {}", to_base64(&sk.verifying_key().to_bytes()));
     if args.show_private_key {
-        println!(
-            "Private key: {}",
-            URL_SAFE_NO_PAD.encode(key::signing_key_to_sk64(&sk))
-        );
+        println!("Private key: {}", to_base64(&key::signing_key_to_sk64(&sk)));
     }
     Ok(())
 }
@@ -134,10 +127,7 @@ fn sign(args: Cli) -> Result<(), anyhow::Error> {
         println!("Loading key from {}", load);
     }
     let sk = disk::load_key(&load, &password)?;
-    println!(
-        "Public key: {}",
-        URL_SAFE_NO_PAD.encode(sk.verifying_key().to_bytes())
-    );
+    println!("Public key: {}", to_base64(&sk.verifying_key().to_bytes()));
     if args.verbose {
         println!("Loading R⬢ from {}", rhex);
     }
@@ -146,26 +136,29 @@ fn sign(args: Cli) -> Result<(), anyhow::Error> {
 
     let sig: ed25519_dalek::Signature = match signature_type {
         "author" => {
-            let message_bytes = rhex.intent.canonical_bytes()?;
-            let message_hash = blake3::hash(message_bytes.as_slice());
-            key::sign_as_author(message_hash.as_bytes(), &sk)
+            // Old line to get the hash... we now use the fn off Rhex
+            //let message_bytes = rhex.intent.canonical_bytes()?;
+            let message_hash = rhex.to_author_hash()?;
+            key::sign(&message_hash, &sk)
         }
         "usher" => {
-            let author_sig = rhex.signatures[0].sig;
-            let at = rhex.context.at;
-            let at_bytes = at.to_be_bytes();
-            let mut buf = Vec::with_capacity(author_sig.len() + at_bytes.len());
-            buf.extend_from_slice(&author_sig);
-            buf.extend_from_slice(&at_bytes);
-            let usher_context_hash = blake3::hash(buf.as_slice());
-            key::sign_as_usher(usher_context_hash.as_bytes(), &sk)
+            // Lawd have mercy this was some frail ass shit.
+            //let author_sig = rhex.signatures[0].sig;
+            //let at = rhex.context.at;
+            //let at_bytes = at.to_be_bytes();
+            //let mut buf = Vec::with_capacity(author_sig.len() + at_bytes.len());
+            //buf.extend_from_slice(&author_sig);
+            //buf.extend_from_slice(&at_bytes);
+            let usher_context_hash = rhex.to_usher_hash()?;
+            key::sign(&usher_context_hash, &sk)
         }
         "quorum" => {
-            let mut buf = Vec::new();
-            buf.extend_from_slice(&rhex.signatures[0].sig);
-            buf.extend_from_slice(&rhex.signatures[1].sig);
-            let sig_hash = blake3::hash(buf.as_slice());
-            key::sign_as_quorum(sig_hash.as_bytes(), &sk)
+            // Nope... not here either!
+            //let mut buf = Vec::new();
+            //buf.extend_from_slice(&rhex.signatures[0].sig);
+            //buf.extend_from_slice(&rhex.signatures[1].sig);
+            let sig_hash = rhex.to_quorum_hash()?;
+            key::sign(&sig_hash, &sk)
         }
         _ => anyhow::bail!("unknown signature type {signature_type}"),
     };
@@ -196,12 +189,7 @@ fn verify(args: Cli) -> Result<(), anyhow::Error> {
     let rhex = disk::load_rhex(&Path::new(load_rhex).to_path_buf())?;
 
     // Precompute the author message hash: blake3(intent.canonical_bytes())
-    let intent_bytes = rhex.intent.canonical_bytes()?;
-    let author_msg_hash = blake3::hash(&intent_bytes);
-
-    // Grab author & usher signatures (raw bytes) if present, to build contexts for later
-    let author_sig_rec = rhex.signatures.iter().find(|s| s.sig_type == 0);
-    let usher_sig_rec = rhex.signatures.iter().find(|s| s.sig_type == 1);
+    let author_msg_hash = rhex.to_author_hash()?;
 
     for (i, sigrec) in rhex.signatures.iter().enumerate() {
         // Recreate verifier + signature types
@@ -210,31 +198,15 @@ fn verify(args: Cli) -> Result<(), anyhow::Error> {
         let sig = DalekSig::from_bytes(&sigrec.sig);
 
         // Build the exact message that was signed for this sig_type
-        let msg: Vec<u8> = match sigrec.sig_type {
+        let msg: [u8; 32] = match sigrec.sig_type {
             // author: H(canonical intent)
-            0 => author_msg_hash.as_bytes().to_vec(),
+            0 => author_msg_hash,
 
             // usher: H( author_sig || rhex.context.at.to_be_bytes() )
-            1 => {
-                let author = author_sig_rec
-                    .ok_or_else(|| anyhow::anyhow!("usher sig present but missing author sig"))?;
-                let mut buf = [0u8; 64 + 8];
-                buf[..64].copy_from_slice(&author.sig);
-                buf[64..].copy_from_slice(&rhex.context.at.to_be_bytes());
-                blake3::hash(&buf).as_bytes().to_vec()
-            }
+            1 => rhex.to_usher_hash()?,
 
             // quorum: H( author_sig || usher_sig )
-            2 => {
-                let author = author_sig_rec
-                    .ok_or_else(|| anyhow::anyhow!("quorum sig present but missing author sig"))?;
-                let usher = usher_sig_rec
-                    .ok_or_else(|| anyhow::anyhow!("quorum sig present but missing usher sig"))?;
-                let mut buf = [0u8; 64 + 64];
-                buf[..64].copy_from_slice(&author.sig);
-                buf[64..].copy_from_slice(&usher.sig);
-                blake3::hash(&buf).as_bytes().to_vec()
-            }
+            2 => rhex.to_quorum_hash()?,
 
             _ => anyhow::bail!("unknown signature type {}", sigrec.sig_type),
         };
@@ -245,17 +217,17 @@ fn verify(args: Cli) -> Result<(), anyhow::Error> {
                 if verbose {
                     println!("Verifying author signature...");
                 }
-                if !verify_as_author(&msg, &sig, &vk) {
+                if !key::verify(&msg, &sig, &vk) {
                     anyhow::bail!("❌ Author verification failed");
                 }
             }
             1 => {
-                if !verify_as_usher(&msg, &sig, &vk) {
+                if !key::verify(&msg, &sig, &vk) {
                     anyhow::bail!("❌ Usher verification failed");
                 }
             }
             2 => {
-                if !verify_as_quorum(&msg, &sig, &vk) {
+                if !key::verify(&msg, &sig, &vk) {
                     anyhow::bail!("❌ Quorum verification failed");
                 }
             }
@@ -278,10 +250,11 @@ fn verify(args: Cli) -> Result<(), anyhow::Error> {
 
         if verbose {
             println!(
-                "✅ verified sig #{i} (type {}), pk={}, sig={}",
+                "✅ verified sig #{i} (type {}), pk={}, sig={}, sig_hash={}",
                 sigrec.sig_type,
-                URL_SAFE_NO_PAD.encode(sigrec.public_key),
-                URL_SAFE_NO_PAD.encode(sigrec.sig),
+                to_base64(&sigrec.public_key),
+                to_base64(&sigrec.sig),
+                to_base64(&msg)
             );
         }
     }
