@@ -1,7 +1,7 @@
-use crate::codec::RhexCodec;
 use anyhow::Result;
 use futures::{Sink, Stream};
 use hodeauxledger_core::Rhex;
+use hodeauxledger_proto::codec::RhexCodec;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 use tokio::net::TcpStream;

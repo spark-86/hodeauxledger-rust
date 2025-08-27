@@ -2,9 +2,9 @@ use aes_gcm::{Aes256Gcm, KeyInit, aead::Aead};
 use anyhow::{Context, Result, anyhow, bail};
 use argon2::{Algorithm, Argon2, Params, Version};
 use ed25519_dalek::SigningKey;
-use hodeauxledger_core::rhex::intent::Intent;
 use hodeauxledger_core::rhex::rhex::Rhex;
 use hodeauxledger_core::scope::authority::Authority;
+use hodeauxledger_core::{rhex::intent::Intent, scope::table::ScopeTable};
 use rand::RngCore;
 use std::{
     fs,
@@ -241,6 +241,8 @@ pub fn save_intent(path: &str, intent: &Intent) -> Result<()> {
     Ok(())
 }
 
+/// Loads the scope table from ledger_path/scope_table.json
+/// * `ledger_path` - str path to the ledger directory
 pub fn load_scope_table(ledger_path: &str) -> Result<serde_json::Value> {
     if ledger_path.is_empty() {
         anyhow::bail!("empty path");
@@ -252,13 +254,13 @@ pub fn load_scope_table(ledger_path: &str) -> Result<serde_json::Value> {
     Ok(output)
 }
 
-pub fn save_scope_table(ledger_path: &str, table: &serde_json::Value) -> Result<()> {
+pub fn save_scope_table(ledger_path: &str, table: &ScopeTable) -> Result<()> {
     if ledger_path.is_empty() {
         anyhow::bail!("empty path");
     }
     let mut filename = PathBuf::from(ledger_path);
     filename.push("scope_table.json");
-    let table_str = serde_json::to_string(table)?;
+    let table_str = table.to_string();
     fs::write(&filename, table_str)?;
     Ok(())
 }

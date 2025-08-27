@@ -4,6 +4,7 @@ pub mod rhex;
 pub mod schema;
 pub mod scope;
 pub mod time;
+pub mod url;
 
 // Re-export common types for nice imports:
 pub use crypto::b64::{from_base64, to_base64};

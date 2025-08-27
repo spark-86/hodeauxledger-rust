@@ -1,13 +1,14 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SchemaField {
-    name: String,
-    label: String,
-    description: String,
-    data_type: String,
-    value: String,
-    required: bool,
+    pub name: String,
+    pub label: String,
+    pub description: String,
+    pub data_type: String,
+    pub value: Value,
+    pub required: bool,
 }
 
 impl SchemaField {
@@ -22,38 +23,16 @@ impl SchemaField {
         label: &str,
         description: &str,
         data_type: &str,
-        value: &str,
-        required: &bool,
+        value: Value,
+        required: bool,
     ) -> Self {
         Self {
             name: name.to_string(),
             label: label.to_string(),
             description: description.to_string(),
             data_type: data_type.to_string(),
-            value: value.to_string(),
-            required: *required,
-        }
-    }
-
-    pub fn to_json(&self) -> serde_json::Value {
-        serde_json::json!({
-            "name": &self.name,
-            "label": &self.label,
-            "description": &self.description,
-            "data_type": &self.data_type,
-            "value": &self.value,
-            "required": &self.required,
-        })
-    }
-
-    pub fn from_json(json: serde_json::Value) -> Self {
-        Self {
-            name: json["name"].as_str().unwrap().to_string(),
-            label: json["label"].as_str().unwrap().to_string(),
-            description: json["description"].as_str().unwrap().to_string(),
-            data_type: json["data_type"].as_str().unwrap().to_string(),
-            value: json["value"].as_str().unwrap().to_string(),
-            required: json["required"].as_bool().unwrap(),
+            value,
+            required,
         }
     }
 }

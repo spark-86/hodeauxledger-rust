@@ -1,7 +1,7 @@
 use rand::distr::Distribution;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Clone, PartialEq, Eq, Hash)] // Add PartialEq, Eq, Hash for potential Set usage if needed, but not strictly for this solution
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)] // Add PartialEq, Eq, Hash for potential Set usage if needed, but not strictly for this solution
 pub struct Authority {
     pub name: String,
     pub host: String,
@@ -118,7 +118,6 @@ pub fn pick_k_weighted_unique<'a>(list: &'a [Authority], k: usize) -> Vec<&'a Au
 
     result
 }
-
 pub fn byzantine_quorum_k(n: usize) -> usize {
     if n < 4 { 1 } else { (2 * n + 2) / 3 }
 }

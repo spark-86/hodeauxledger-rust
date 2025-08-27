@@ -939,13 +939,17 @@ dependencies = [
  "anyhow",
  "argon2",
  "ed25519-dalek",
+ "futures",
  "hodeauxledger-core",
+ "hodeauxledger-proto",
  "owo-colors",
  "rand",
  "rusqlite",
  "serde",
  "serde_cbor",
  "serde_json",
+ "tokio",
+ "tokio-util",
  "zeroize",
 ]
 
@@ -955,18 +959,17 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bytes",
- "futures",
  "hodeauxledger-core",
- "tokio",
  "tokio-util",
 ]
 
 [[package]]
-name = "hodeauxledger-resolver"
+name = "hodeauxledger-services"
 version = "0.1.0"
 dependencies = [
- "rand",
- "serde",
+ "anyhow",
+ "hodeauxledger-core",
+ "hodeauxledger-io",
 ]
 
 [[package]]

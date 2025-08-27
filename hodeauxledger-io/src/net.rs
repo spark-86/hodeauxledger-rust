@@ -4,9 +4,9 @@ use hodeauxledger_core::Rhex;
 use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
 
-use crate::codec::RhexCodec;
 use futures::stream::SplitSink;
 use futures::stream::SplitStream;
+use hodeauxledger_proto::codec::RhexCodec;
 
 #[derive(Debug)]
 pub struct Transport {

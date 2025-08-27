@@ -4,8 +4,8 @@ use hodeauxledger_core::rhex::rhex::Rhex;
 use hodeauxledger_core::rhex::signature::Signature;
 use hodeauxledger_core::scope::authority;
 use hodeauxledger_io::disk;
+use hodeauxledger_io::net::Transport;
 use hodeauxledger_io::screen;
-use hodeauxledger_proto::transport::Transport;
 
 pub async fn bootstrap_network(
     verbose: bool,
