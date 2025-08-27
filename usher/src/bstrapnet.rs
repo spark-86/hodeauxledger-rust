@@ -1,4 +1,5 @@
 use hodeauxledger_core::crypto::key;
+use hodeauxledger_core::crypto::key::Key;
 use hodeauxledger_core::rhex::intent::Intent;
 use hodeauxledger_core::rhex::rhex::Rhex;
 use hodeauxledger_core::rhex::signature::Signature;
@@ -9,7 +10,7 @@ use hodeauxledger_proto::transport::Transport;
 
 pub async fn bootstrap_network(
     verbose: bool,
-    author_sk: &[u8; 64],
+    author_sk: &[u8; 32],
 ) -> anyhow::Result<(), anyhow::Error> {
     // First we get the list of root authorities from our json
     let auth = disk::load_root_auth("root_auth.json")?;
@@ -54,9 +55,9 @@ pub async fn bootstrap_network(
     Ok(())
 }
 
-fn build_request_rhex(usher_pk: [u8; 32], key: &[u8; 64]) -> Rhex {
+fn build_request_rhex(usher_pk: [u8; 32], key: &[u8; 32]) -> Rhex {
     let nonce = Rhex::gen_nonce();
-    let sk = key::sk64_to_signing_key(key);
+    let sk = Key::from_bytes(key).sk.unwrap();
     let pk = sk.verifying_key();
     let author_pk = pk.to_bytes();
     let data = serde_json::json!({
@@ -64,38 +65,6 @@ fn build_request_rhex(usher_pk: [u8; 32], key: &[u8; 64]) -> Rhex {
         "types": ["*"]
     });
     let record_type = "request";
-    let scope = "";
-    let previous_hash = [0u8; 32];
-    let intent = Intent::new(
-        previous_hash,
-        scope,
-        nonce.as_str(),
-        author_pk,
-        usher_pk,
-        record_type,
-        data,
-    );
-    let mut rhex = Rhex::draft(intent, Vec::new());
-    let intent_hash = rhex.to_author_hash().unwrap();
-    let dalek_sig = key::sign(&intent_hash, &sk);
-    let sig = Signature {
-        sig_type: 0,
-        public_key: author_pk,
-        sig: dalek_sig.into(),
-    };
-    rhex.signatures.push(sig);
-    rhex
-}
-
-fn build_policy_rhex(usher_pk: [u8; 32], key: &[u8; 64]) -> Rhex {
-    let nonce = Rhex::gen_nonce();
-    let sk = key::sk64_to_signing_key(key);
-    let pk = sk.verifying_key();
-    let author_pk = pk.to_bytes();
-    let data = serde_json::json!({
-        "schema": "rhex://schema/policy_current@1",
-    });
-    let record_type = "policy:current";
     let scope = "";
     let previous_hash = [0u8; 32];
     let intent = Intent::new(

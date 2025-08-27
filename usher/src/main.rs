@@ -8,6 +8,8 @@ use std::time::Duration;
 use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
 
+use crate::bstrapnet::bootstrap_network;
+
 mod bstrapnet;
 mod head;
 #[derive(Parser, Debug)]
@@ -35,6 +37,9 @@ struct Cli {
 
     #[arg(short, long)]
     scope: Option<String>,
+
+    #[arg(long)]
+    hot: bool,
 }
 
 async fn submit_rhex(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
@@ -92,6 +97,25 @@ async fn submit_rhex(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
 async fn main() -> anyhow::Result<()> {
     let args = Cli::parse();
     let action = args.action.as_str();
+    let verbose = args.verbose;
+    let keyfile = args
+        .keyfile
+        .as_deref()
+        .ok_or_else(|| anyhow::anyhow!("keyfile must be specified"))?;
+    let hot = args.hot;
+    let password = args.password.as_deref();
+
+    // get key
+    let author_sk = match hot {
+        true => disk::load_key_hot(Path::new(keyfile))?,
+        false => {
+            let pw = password.ok_or_else(|| anyhow::anyhow!("password must be specified"))?;
+            let key = disk::load_key(Path::new(keyfile), pw)?;
+            key.to_bytes()
+        }
+    };
+
+    bootstrap_network(verbose, &author_sk).await?;
     match action {
         "submit" => submit_rhex(&args).await?,
         "head" => head::get_head(

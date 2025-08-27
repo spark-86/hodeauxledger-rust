@@ -4,7 +4,6 @@ use serde_json::Value;
 use std::convert::TryInto;
 
 use hodeauxledger_core::Rhex;
-use hodeauxledger_core::crypto::b64::to_base64;
 
 #[derive(Debug)]
 pub struct Cache {

@@ -32,6 +32,7 @@ pub fn load_encrypted_key(path: &Path, password: &str) -> Result<SigningKey, any
 }
 
 pub fn generate_key(args: Cli) -> Result<(), anyhow::Error> {
+    // Set up command line params
     let password = args
         .password
         .as_deref()
@@ -44,10 +45,15 @@ pub fn generate_key(args: Cli) -> Result<(), anyhow::Error> {
     let hot = args.hot;
     let quiet = args.quiet;
     let verbose = args.verbose;
-    println!("Generating keypair...");
-    let sk64 = Key::new().to_bytes();
-    let sk = key::sk64_to_signing_key(&sk64);
-    let pk = sk.verifying_key();
+
+    // Generate keypair
+    if !quiet {
+        println!("Generating keypair...");
+    }
+    let sk = Key::new();
+    let sk64 = sk.to_bytes();
+    let signing_key = sk.sk.unwrap();
+    let pk = signing_key.verifying_key();
     if !quiet {
         println!("Public key: {}", to_base64(&pk.to_bytes()));
         if show_private_key {
@@ -58,10 +64,11 @@ pub fn generate_key(args: Cli) -> Result<(), anyhow::Error> {
         println!("Saving key to {}", save_path);
     }
 
+    // Save key
     if hot {
-        crypto::save_hot_key(Path::new(save_path), &sk)?;
+        crypto::save_hot_key(Path::new(save_path), &signing_key)?;
     } else {
-        crypto::save_encrypted_key(Path::new(save_path), password, &sk)?;
+        crypto::save_encrypted_key(Path::new(save_path), password, &signing_key)?;
     }
     Ok(())
 }
