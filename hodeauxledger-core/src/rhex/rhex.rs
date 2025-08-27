@@ -1,4 +1,4 @@
-use crate::crypto::key;
+use crate::crypto::key::Key;
 
 use super::context::Context;
 use super::intent::Intent;
@@ -196,9 +196,11 @@ impl Rhex {
         // Validate author signature
         // (use `?` on fallible conversions)
         let author_pk = VerifyingKey::from_bytes(&author_pk_bytes)?;
+        let mut author_key = Key::new();
+        author_key.set_pub_key(author_pk);
         let author_dalek = DalekSig::from_bytes(&author_sig_bytes);
         let msg = self.to_author_hash()?; // whatever your author-hash bytes are
-        let ok = key::verify(&msg, &author_dalek, &author_pk);
+        let ok = author_key.verify(&msg, &author_dalek);
         if !ok {
             anyhow::bail!("invalid author signature");
         }
@@ -214,8 +216,10 @@ impl Rhex {
             };
             let msg = self.to_usher_hash()?;
             let usher_pk = VerifyingKey::from_bytes(&usher_pk_bytes)?;
+            let mut usher_key = Key::new();
+            usher_key.set_pub_key(usher_pk);
             let usher_dalek = DalekSig::from_bytes(&usher_sig_bytes);
-            let ok = key::verify(&msg, &usher_dalek, &usher_pk);
+            let ok = usher_key.verify(&msg, &usher_dalek);
             if !ok {
                 anyhow::bail!("invalid usher signature");
             }
@@ -229,8 +233,10 @@ impl Rhex {
             let msg = self.to_quorum_hash()?;
             for sig in quorum_sigs {
                 let pk = VerifyingKey::from_bytes(&sig.public_key)?;
+                let mut quorum_key = Key::new();
+                quorum_key.set_pub_key(pk);
                 let dalek = DalekSig::from_bytes(&sig.sig);
-                let ok = key::verify(&msg, &dalek, &pk);
+                let ok = quorum_key.verify(&msg, &dalek);
                 if !ok {
                     anyhow::bail!("invalid quorum signature");
                 }

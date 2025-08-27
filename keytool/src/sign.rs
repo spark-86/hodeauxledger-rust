@@ -3,8 +3,8 @@ use std::path::Path;
 use anyhow::{Context, Ok, Result, anyhow, bail, ensure};
 use ed25519_dalek::{Signature as DalekSig, SigningKey, VerifyingKey};
 use hodeauxledger_core::rhex::signature::SigType;
-use hodeauxledger_core::to_base64;
-use hodeauxledger_core::{Rhex, Signature, crypto::key};
+use hodeauxledger_core::{Key, to_base64};
+use hodeauxledger_core::{Rhex, Signature};
 use hodeauxledger_io::disk;
 
 use crate::{Cli, crypto};
@@ -25,14 +25,16 @@ pub fn sign_rhex(
         SigType::Quorum => rhex.to_quorum_hash()?,
     };
 
-    // sign without extra allocs
-    let sig = key::sign(hash.as_ref(), sk);
+    // sign
+    let sign_key = Key::new();
+    sign_key.from_bytes(&sk.to_bytes());
+    let sig = sign_key.sign(hash.as_ref())?;
 
     // append signature
     rhex.signatures.push(Signature {
-        sig_type: sig_type.into(),                 // u8
-        public_key: sk.verifying_key().to_bytes(), // [u8; 32]
-        sig: sig.to_bytes(),                       // [u8; 64]
+        sig_type: sig_type.into(),       // u8
+        public_key: sign_key.to_bytes(), // [u8; 32]
+        sig: sig.to_bytes(),             // [u8; 64]
     });
 
     if verbose {
@@ -67,6 +69,8 @@ pub fn verify_rhex(rhex: &Rhex, verbose: bool) -> Result<bool> {
         // Get VerifyingKey from our signatures public key
         let vk =
             VerifyingKey::from_bytes(&sigrec.public_key).context("invalid public key bytes")?;
+        let mut sig_key = Key::new();
+        sig_key.set_pub_key(vk);
 
         // Get the signature itself
         let sig = DalekSig::from_bytes(&sigrec.sig);
@@ -82,7 +86,7 @@ pub fn verify_rhex(rhex: &Rhex, verbose: bool) -> Result<bool> {
             SigType::Usher => rhex.to_usher_hash()?,
             SigType::Quorum => rhex.to_quorum_hash()?,
         };
-        if !key::verify(&msg, &sig, &vk) {
+        if !sig_key.verify(&msg, &sig) {
             if verbose {
                 println!("❌ Signature verification failed for type {:?}", sigrec);
             }

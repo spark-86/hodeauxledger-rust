@@ -1,4 +1,3 @@
-use hodeauxledger_core::crypto::key;
 use hodeauxledger_core::crypto::key::Key;
 use hodeauxledger_core::rhex::intent::Intent;
 use hodeauxledger_core::rhex::rhex::Rhex;
@@ -57,9 +56,9 @@ pub async fn bootstrap_network(
 
 fn build_request_rhex(usher_pk: [u8; 32], key: &[u8; 32]) -> Rhex {
     let nonce = Rhex::gen_nonce();
-    let sk = Key::from_bytes(key).sk.unwrap();
-    let pk = sk.verifying_key();
-    let author_pk = pk.to_bytes();
+    let author_key = Key::new();
+    author_key.from_bytes(key);
+    let author_pk = author_key.to_bytes();
     let data = serde_json::json!({
         "schema": "rhex://schema/request@1",
         "types": ["*"]
@@ -78,7 +77,7 @@ fn build_request_rhex(usher_pk: [u8; 32], key: &[u8; 32]) -> Rhex {
     );
     let mut rhex = Rhex::draft(intent, Vec::new());
     let intent_hash = rhex.to_author_hash().unwrap();
-    let dalek_sig = key::sign(&intent_hash, &sk);
+    let dalek_sig = author_key.sign(&intent_hash).unwrap();
     let sig = Signature {
         sig_type: 0,
         public_key: author_pk,
