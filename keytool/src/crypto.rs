@@ -2,7 +2,7 @@ use crate::crypto;
 use anyhow::anyhow;
 use ed25519_dalek::SigningKey;
 use hodeauxledger_core::crypto::b64::to_base64;
-use hodeauxledger_core::crypto::key;
+use hodeauxledger_core::crypto::key::{self, Key};
 use hodeauxledger_io::disk;
 use std::path::Path;
 
@@ -45,7 +45,7 @@ pub fn generate_key(args: Cli) -> Result<(), anyhow::Error> {
     let quiet = args.quiet;
     let verbose = args.verbose;
     println!("Generating keypair...");
-    let sk64 = key::generate_key();
+    let sk64 = Key::new().to_bytes();
     let sk = key::sk64_to_signing_key(&sk64);
     let pk = sk.verifying_key();
     if !quiet {
