@@ -4,7 +4,7 @@ use super::context::Context;
 use super::intent::Intent;
 use super::signature::Signature;
 use ed25519_dalek::{Signature as DalekSig, VerifyingKey};
-use rand::{Rng, distributions::Alphanumeric};
+use rand::{Rng, distr::Alphanumeric};
 use serde::{Deserialize, Serialize};
 use serde_with::serde_as;
 use std::cmp::Ordering;
@@ -164,7 +164,7 @@ impl Rhex {
     }
 
     pub fn gen_nonce() -> String {
-        rand::thread_rng()
+        rand::rng()
             .sample_iter(&Alphanumeric)
             .take(16)
             .map(char::from)

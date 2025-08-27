@@ -7,6 +7,7 @@ use tokio_util::codec::{Decoder, Encoder};
 pub const RHEX_FRAME_SIZE: usize = 4096;
 
 /// Codec for encoding/decoding Rhex messages with 4 KiB fixed-size padding.
+#[derive(Debug)]
 pub struct RhexCodec;
 
 impl RhexCodec {

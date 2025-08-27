@@ -1,8 +1,11 @@
+use serde::Deserialize;
+
 use crate::policy::rule::Rule;
 
+#[derive(Debug, Deserialize)]
 pub struct Policy {
-    pub scope_name: String,
-    pub rules: Vec<Rule>,
+    pub scope_name: String, // String name of the scope this affects
+    pub rules: Vec<Rule>,   // Set of append rules
 }
 
 impl Policy {

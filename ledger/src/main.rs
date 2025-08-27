@@ -4,14 +4,13 @@ use cursive::{
     view::{Nameable, Resizable},
     views::{Button, Dialog, EditView, LinearLayout, SelectView, TextView},
 };
-use hodeauxledger_core::crypto::b64::from_base64_to_32;
-use hodeauxledger_core::crypto::key;
-use hodeauxledger_core::rhex::signature::Signature;
-use hodeauxledger_core::rhex::{intent::Intent, rhex::Rhex};
 use hodeauxledger_io::disk;
 use hodeauxledger_io::screen::pretty_print_rhex;
 use std::io::Write;
-use std::{path::Path, time::SystemTime};
+use std::path::Path;
+
+mod craft;
+mod genesis;
 
 //const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -133,64 +132,6 @@ fn build_intent(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
     Ok(())
 }
 
-/// Craft an intent entirely from the command line to be signed by
-/// the keytool.
-fn craft_intent(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
-    let save_path = args
-        .save
-        .as_deref()
-        .ok_or_else(|| anyhow::anyhow!("save must be specified"))?;
-    let author_pk_b64 = args
-        .author_public_key
-        .as_deref()
-        .ok_or_else(|| anyhow::anyhow!("author_public_key must be specified"))?;
-    let usher_pk_b64 = args
-        .usher_public_key
-        .as_deref()
-        .ok_or_else(|| anyhow::anyhow!("usher_public_key must be specified"))?;
-    let scope = args
-        .scope
-        .as_deref()
-        .ok_or_else(|| anyhow::anyhow!("scope must be specified"))?;
-    let data_file = args
-        .data_file
-        .as_deref()
-        .ok_or_else(|| anyhow::anyhow!("data_file must be specified"))?;
-    let record_type = args
-        .record_type
-        .as_deref()
-        .ok_or_else(|| anyhow::anyhow!("record_type must be specified"))?;
-    let previous_hash_b64 = args
-        .previous_hash
-        .as_deref()
-        .ok_or_else(|| anyhow::anyhow!("previous_hash must be specified"))?;
-    let nonce = args.nonce.clone().unwrap_or_else(|| Rhex::gen_nonce());
-    let data = disk::load_json_data(data_file)?;
-    let ph_bytes = match previous_hash_b64.len() {
-        32 => from_base64_to_32(previous_hash_b64)?,
-        0 => [0u8; 32],
-        _ => anyhow::bail!("previous_hash must be 32 bytes or empty"),
-    };
-    let nonce = nonce.to_string();
-    let author_pk = from_base64_to_32(author_pk_b64)?;
-    let usher_pk = from_base64_to_32(usher_pk_b64)?;
-    let intent = Intent::new(
-        ph_bytes,
-        &scope,
-        &nonce,
-        author_pk,
-        usher_pk,
-        record_type,
-        data,
-    );
-
-    let rhex = Rhex::draft(intent, Vec::new());
-    // output rhex intent
-    //disk::save_intent(save_path, &rhex.intent)?;
-    disk::save_rhex(&Path::new(save_path).to_path_buf(), &rhex)?;
-    Ok(())
-}
-
 // Finalize a R⬢ by calculating it's current_hash and saving it
 fn finalize_rhex(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
     let rhex_path = args
@@ -224,70 +165,6 @@ fn verify_current_hash(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
     Ok(())
 }
 
-/// Creates a genesis record. In theory only used once, ever. Why it's
-/// part of the tool and not it's own standalone thing I don't know.
-fn create_genesis(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
-    let save_path = args
-        .save
-        .as_deref()
-        .ok_or_else(|| anyhow::anyhow!("save must be specified"))?;
-    let keyfile = args
-        .keyfile
-        .as_deref()
-        .ok_or_else(|| anyhow::anyhow!("keyfile must be specified"))?;
-    let password = args
-        .password
-        .as_deref()
-        .ok_or_else(|| anyhow::anyhow!("password must be specified"))?;
-    let sk = disk::load_key(keyfile, password)?;
-    let pk = sk.verifying_key();
-    let pk_bytes = pk.to_bytes();
-    let data = serde_json::json!({
-        "schema": "schema/scope.genesis/1",
-        "description": "Trust Architecture Core Scope Genesis",
-        "unix_at": SystemTime::now().duration_since(SystemTime::UNIX_EPOCH)?.as_millis() as u64,
-    });
-    let mut rhex = Rhex::draft(
-        Intent::new(
-            [0u8; 32],
-            "",
-            Rhex::gen_nonce().as_str(),
-            pk_bytes,
-            pk_bytes,
-            "scope:genesis",
-            data,
-        ),
-        Vec::new(),
-    );
-
-    // Sign as author
-    let intent_hash = rhex.to_author_hash()?;
-    rhex.signatures.push(Signature {
-        sig_type: 0,
-        public_key: pk_bytes,
-        sig: key::sign(&intent_hash, &sk).into(),
-    });
-
-    // Sign as usher
-    let usher_hash = rhex.to_usher_hash()?;
-    rhex.signatures.push(Signature {
-        sig_type: 1,
-        public_key: pk_bytes,
-        sig: key::sign(&usher_hash, &sk).into(),
-    });
-
-    // Sign quorum
-    let quorum_hash = rhex.to_quorum_hash()?;
-    rhex.signatures.push(Signature {
-        sig_type: 2,
-        public_key: pk_bytes,
-        sig: key::sign(&quorum_hash, &sk).into(),
-    });
-    let final_rhex = rhex.finalize()?;
-    disk::save_rhex(&Path::new(save_path).to_path_buf(), &final_rhex)?;
-    Ok(())
-}
-
 fn main() -> anyhow::Result<()> {
     let args = Cli::parse();
     let action = args.action.as_str();
@@ -298,10 +175,10 @@ fn main() -> anyhow::Result<()> {
     //);
     match action {
         "build" => build_intent(&args)?,
-        "craft" => craft_intent(&args)?,
+        "craft" => craft::craft_intent(&args)?,
         "finalize" => finalize_rhex(&args)?,
         "verify" => verify_current_hash(&args)?,
-        "genesis" => create_genesis(&args)?,
+        "genesis" => genesis::create_genesis(&args)?,
         _ => {
             anyhow::bail!("unknown operation");
         }

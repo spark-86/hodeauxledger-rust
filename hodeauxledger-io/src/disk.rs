@@ -4,6 +4,7 @@ use argon2::{Algorithm, Argon2, Params, Version};
 use ed25519_dalek::SigningKey;
 use hodeauxledger_core::rhex::intent::Intent;
 use hodeauxledger_core::rhex::rhex::Rhex;
+use hodeauxledger_core::scope::authority::Authority;
 use rand::RngCore;
 use std::{
     fs,
@@ -71,9 +72,19 @@ pub fn save_key(path: &Path, password: &str, signing_key: &SigningKey) -> Result
     Ok(())
 }
 
+/// Saves a key as just a raw [u8; 32], needed for the usher's hot
+/// key and other on the fly signing.
+pub fn save_key_hot(path: &Path, signing_key: &SigningKey) -> Result<()> {
+    let tmp = path.with_extension("tmp");
+    let sk_bytes = signing_key.to_bytes();
+    fs::write(&tmp, sk_bytes)?;
+    fs::rename(&tmp, path)?;
+    Ok(())
+}
+
 /// Load an Ed25519 SigningKey by decrypting with password.
-pub fn load_key(path: &str, password: &str) -> Result<SigningKey> {
-    let data = fs::read(path).with_context(|| format!("read key file {}", path))?;
+pub fn load_key(path: &Path, password: &str) -> Result<SigningKey> {
+    let data = fs::read(path).with_context(|| format!("read key file {:?}", path.to_str()))?;
     if data.len() < MAGIC.len() + SALT_LEN + NONCE_LEN {
         anyhow::bail!("key file too short");
     }
@@ -102,6 +113,18 @@ pub fn load_key(path: &str, password: &str) -> Result<SigningKey> {
     let mut sk_bytes = [0u8; 32];
     sk_bytes.copy_from_slice(&plaintext);
     Ok(SigningKey::from_bytes(&sk_bytes))
+}
+
+/// Loads a hot key for things like usher signing.
+/// Hot files are just [u8; 32] streams.
+pub fn load_key_hot(path: &Path) -> Result<[u8; 32]> {
+    let keydata = fs::read(path)?;
+    if keydata.len() != 32 {
+        bail!("invalid key length: expected 32, got {}", keydata.len());
+    }
+    let mut key = [0u8; 32];
+    key.copy_from_slice(&keydata);
+    Ok(key)
 }
 
 pub fn save_rhex(path: &PathBuf, rhex: &Rhex) -> Result<()> {
@@ -218,7 +241,7 @@ pub fn save_intent(path: &str, intent: &Intent) -> Result<()> {
     Ok(())
 }
 
-pub fn get_scope_table(ledger_path: &str) -> Result<serde_json::Value> {
+pub fn load_scope_table(ledger_path: &str) -> Result<serde_json::Value> {
     if ledger_path.is_empty() {
         anyhow::bail!("empty path");
     }
@@ -227,4 +250,25 @@ pub fn get_scope_table(ledger_path: &str) -> Result<serde_json::Value> {
     let table = fs::read_to_string(&filename)?;
     let output = serde_json::from_str(&table)?;
     Ok(output)
+}
+
+pub fn save_scope_table(ledger_path: &str, table: &serde_json::Value) -> Result<()> {
+    if ledger_path.is_empty() {
+        anyhow::bail!("empty path");
+    }
+    let mut filename = PathBuf::from(ledger_path);
+    filename.push("scope_table.json");
+    let table_str = serde_json::to_string(table)?;
+    fs::write(&filename, table_str)?;
+    Ok(())
+}
+
+pub fn load_root_auth(path: &str) -> Result<Vec<Authority>> {
+    if path.is_empty() {
+        anyhow::bail!("empty path");
+    }
+    let p = Path::new(path);
+    let data = fs::read(p)?;
+    let root = serde_json::from_slice(&data)?;
+    Ok(root)
 }

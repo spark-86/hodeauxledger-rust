@@ -8,6 +8,8 @@ use std::time::Duration;
 use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
 
+mod bstrapnet;
+mod head;
 #[derive(Parser, Debug)]
 #[command(name = "usher", about = "HodeauxLedger Usher Tool")]
 struct Cli {
@@ -24,6 +26,15 @@ struct Cli {
 
     #[arg(short, long)]
     port: Option<String>,
+
+    #[arg(short, long)]
+    keyfile: Option<String>,
+
+    #[arg(short, long)]
+    password: Option<String>,
+
+    #[arg(short, long)]
+    scope: Option<String>,
 }
 
 async fn submit_rhex(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
@@ -83,6 +94,11 @@ async fn main() -> anyhow::Result<()> {
     let action = args.action.as_str();
     match action {
         "submit" => submit_rhex(&args).await?,
+        "head" => head::get_head(
+            args.scope
+                .as_deref()
+                .ok_or_else(|| anyhow::anyhow!("scope must be specified"))?,
+        )?,
         _ => {
             anyhow::bail!("unknown operation");
         }

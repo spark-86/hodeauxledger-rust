@@ -13,3 +13,4 @@ hodeauxledger-core = { path = "../hodeauxledger-core" }
 hodeauxledger-proto = { path = "../hodeauxledger-proto" }
 hodeauxledger-io = { path = "../hodeauxledger-io" }
 bytes = "1.10.1"
+serde_json = "1.0.143"

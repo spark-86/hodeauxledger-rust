@@ -1,4 +1,5 @@
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
+use rand::rand_core::OsRng;
 
 /* ---- generic helpers (if you want a single entry point) ---- */
 
@@ -20,8 +21,10 @@ pub fn from_bytes(bytes: &[u8; 32]) -> SigningKey {
 }
 
 pub fn generate_key() -> [u8; 64] {
-    let sk = SigningKey::generate(&mut rand::thread_rng());
-    signing_key_to_sk64(&sk)
+    let mut csprng = OsRng;
+    //let sk = SigningKey::generate(&mut csprng);
+    //signing_key_to_sk64(&sk)
+    [0u8; 64]
 }
 
 pub fn signing_key_to_sk64(sk: &SigningKey) -> [u8; 64] {

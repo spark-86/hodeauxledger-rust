@@ -38,6 +38,10 @@ impl GTClock {
         let into = mm_total.rem_euclid(MICROMARKS_PER_TURN);
         (turn, into)
     }
+
+    pub fn time_at_micromarks(&self, mm: i128) -> i128 {
+        self.epoch_unix_ms + mm * SIDEREAL_MS / MICROMARKS_PER_TURN
+    }
 }
 
 /// Helper: current Unix time in **milliseconds** as i128.
