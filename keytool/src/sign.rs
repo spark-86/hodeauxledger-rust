@@ -5,7 +5,7 @@ use ed25519_dalek::{Signature as DalekSig, SigningKey, VerifyingKey};
 use hodeauxledger_core::rhex::signature::SigType;
 use hodeauxledger_core::{Key, to_base64};
 use hodeauxledger_core::{Rhex, Signature};
-use hodeauxledger_io::disk;
+use hodeauxledger_io::disk::disk;
 
 use crate::{Cli, crypto};
 

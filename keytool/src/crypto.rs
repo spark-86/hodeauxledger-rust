@@ -3,7 +3,7 @@ use anyhow::anyhow;
 use ed25519_dalek::SigningKey;
 use hodeauxledger_core::crypto::b64::to_base64;
 use hodeauxledger_core::crypto::key::{self, Key};
-use hodeauxledger_io::disk;
+use hodeauxledger_io::disk::disk;
 use std::path::Path;
 
 use crate::Cli;

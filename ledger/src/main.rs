@@ -4,7 +4,7 @@ use cursive::{
     view::{Nameable, Resizable},
     views::{Button, Dialog, EditView, LinearLayout, SelectView, TextView},
 };
-use hodeauxledger_io::disk;
+use hodeauxledger_io::disk::disk;
 use hodeauxledger_io::screen::pretty_print_rhex;
 use std::io::Write;
 use std::path::Path;

@@ -13,4 +13,6 @@ pub use rhex::context::Context;
 pub use rhex::intent::Intent;
 pub use rhex::rhex::Rhex;
 pub use rhex::signature::Signature;
+pub use scope::alias::Alias;
 pub use time::time::GTClock;
+pub use url::url::RhexUrl;

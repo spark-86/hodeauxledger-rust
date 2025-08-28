@@ -1,6 +1,6 @@
 use clap::Parser;
 use futures::{SinkExt, StreamExt};
-use hodeauxledger_io::disk;
+use hodeauxledger_io::disk::disk;
 use hodeauxledger_io::screen;
 use hodeauxledger_proto::codec::RhexCodec;
 use std::path::Path;

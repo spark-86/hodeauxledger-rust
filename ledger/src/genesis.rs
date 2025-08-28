@@ -3,7 +3,7 @@ use hodeauxledger_core::Key;
 use hodeauxledger_core::rhex::intent::Intent;
 use hodeauxledger_core::rhex::rhex::Rhex;
 use hodeauxledger_core::rhex::signature::Signature;
-use hodeauxledger_io::disk;
+use hodeauxledger_io::disk::disk;
 use std::path::Path;
 use std::time::SystemTime;
 

@@ -1,6 +1,6 @@
 use anyhow::Ok;
 use hodeauxledger_core::scope::scope::Scope;
-use hodeauxledger_io::disk;
+use hodeauxledger_io::disk::disk;
 
 fn get_scope_list(ledger_path: &str) -> Result<Vec<Scope>, anyhow::Error> {
     let scope_table = disk::load_scope_table(ledger_path)?;

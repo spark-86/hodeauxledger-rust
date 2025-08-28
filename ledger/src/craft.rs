@@ -4,7 +4,7 @@ use crate::Cli;
 use hodeauxledger_core::crypto::b64::from_base64_to_32;
 use hodeauxledger_core::rhex::intent::Intent;
 use hodeauxledger_core::rhex::rhex::Rhex;
-use hodeauxledger_io::disk;
+use hodeauxledger_io::disk::disk;
 use std::path::Path;
 
 pub fn craft_intent(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
