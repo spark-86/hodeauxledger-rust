@@ -1,4 +1,3 @@
-use crate::rhex::builder;
 use anyhow::Result;
 use hodeauxledger_core::scope::{
     authority::{self, Authority},
@@ -6,6 +5,7 @@ use hodeauxledger_core::scope::{
     table::ScopeTable,
 };
 use hodeauxledger_io::disk::disk;
+use hodeauxledger_io::disk::scope as diskscope;
 
 pub fn sync_scope(scope_name: &str, starting_head: &[u8; 32]) -> Result<(), anyhow::Error> {
     let scope_table = get_scope_table();
@@ -33,16 +33,16 @@ pub fn sync_scope(scope_name: &str, starting_head: &[u8; 32]) -> Result<(), anyh
 
     // TODO: use `root` (connect, sync, etc.)
     let _ = starting_head; // silence for now if unused
-
+    let _ = root; // silence for now if unused
     Ok(())
 }
 
 pub fn get_scope_table() -> ScopeTable {
-    ScopeTable::from_json(disk::load_scope_table("scope_table.json").unwrap()).unwrap()
+    ScopeTable::from_json(diskscope::load_scope_table("scope_table.json").unwrap()).unwrap()
 }
 
 pub fn save_scope_table(st: &ScopeTable) -> Result<(), anyhow::Error> {
-    disk::save_scope_table("/ledger", st)?;
+    diskscope::save_scope_table("/ledger", st)?;
     Ok(())
 }
 

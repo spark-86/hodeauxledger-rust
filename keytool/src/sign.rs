@@ -5,7 +5,7 @@ use ed25519_dalek::{Signature as DalekSig, SigningKey, VerifyingKey};
 use hodeauxledger_core::rhex::signature::SigType;
 use hodeauxledger_core::{Key, to_base64};
 use hodeauxledger_core::{Rhex, Signature};
-use hodeauxledger_io::disk::disk;
+use hodeauxledger_io::disk::rhex as diskrhex;
 
 use crate::{Cli, crypto};
 
@@ -146,7 +146,7 @@ pub fn sign(args: Cli) -> Result<(), anyhow::Error> {
         println!("Loading R⬢ from {}", rhex_in);
     }
     let p = Path::new(rhex_in);
-    let rhex = disk::load_rhex(&p.to_path_buf())?;
+    let rhex = diskrhex::load_rhex(&p.to_path_buf())?;
 
     let done_rhex = match signature_type {
         SigType::Author => sign_rhex(rhex, signature_type, &sk, verbose)?,
@@ -154,7 +154,7 @@ pub fn sign(args: Cli) -> Result<(), anyhow::Error> {
         SigType::Quorum => sign_rhex(rhex, signature_type, &sk, verbose)?,
     };
 
-    disk::save_rhex(&Path::new(rhex_output).to_path_buf(), &done_rhex)?;
+    diskrhex::save_rhex(&Path::new(rhex_output).to_path_buf(), &done_rhex)?;
     Ok(())
 }
 
@@ -164,7 +164,7 @@ pub fn verify(args: Cli) -> Result<(), anyhow::Error> {
         .as_deref()
         .ok_or_else(|| anyhow!("rhex must be specified"))?;
     let verbose = args.verbose;
-    let rhex = disk::load_rhex(&Path::new(rhex_in).to_path_buf())?;
+    let rhex = diskrhex::load_rhex(&Path::new(rhex_in).to_path_buf())?;
     let err = verify_rhex(&rhex, verbose);
     if err.is_err() {
         anyhow::bail!("Signature verification failed");

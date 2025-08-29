@@ -5,6 +5,7 @@ use hodeauxledger_core::crypto::b64::from_base64_to_32;
 use hodeauxledger_core::rhex::intent::Intent;
 use hodeauxledger_core::rhex::rhex::Rhex;
 use hodeauxledger_io::disk::disk;
+use hodeauxledger_io::disk::rhex as diskrhex;
 use std::path::Path;
 
 pub fn craft_intent(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
@@ -59,6 +60,6 @@ pub fn craft_intent(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
     let rhex = Rhex::draft(intent, Vec::new());
     // output rhex intent
     //disk::save_intent(save_path, &rhex.intent)?;
-    disk::save_rhex(&Path::new(save_path).to_path_buf(), &rhex)?;
+    diskrhex::save_rhex(&Path::new(save_path).to_path_buf(), &rhex)?;
     Ok(())
 }

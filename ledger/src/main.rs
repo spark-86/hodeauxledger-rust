@@ -4,7 +4,7 @@ use cursive::{
     view::{Nameable, Resizable},
     views::{Button, Dialog, EditView, LinearLayout, SelectView, TextView},
 };
-use hodeauxledger_io::disk::disk;
+use hodeauxledger_io::disk::rhex as diskrhex;
 use hodeauxledger_io::screen::pretty_print_rhex;
 use std::io::Write;
 use std::path::Path;
@@ -139,11 +139,11 @@ fn finalize_rhex(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
         .as_deref()
         .ok_or_else(|| anyhow::anyhow!("rhex must be specified"))?;
 
-    let rhex = disk::load_rhex(&Path::new(rhex_path).to_path_buf())?;
+    let rhex = diskrhex::load_rhex(&Path::new(rhex_path).to_path_buf())?;
     let rhex = rhex.finalize()?;
     // output completed R⬢
     if let Some(save_path) = &args.save {
-        disk::save_rhex(&Path::new(save_path).to_path_buf(), &rhex)?;
+        diskrhex::save_rhex(&Path::new(save_path).to_path_buf(), &rhex)?;
         pretty_print_rhex(&rhex);
     } else {
         let v = serde_cbor::value::to_value(&rhex)?;
@@ -159,7 +159,7 @@ fn verify_current_hash(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
         .rhex
         .as_deref()
         .ok_or_else(|| anyhow::anyhow!("rhex must be specified"))?;
-    let rhex = disk::load_rhex(&Path::new(rhex_path).to_path_buf())?;
+    let rhex = diskrhex::load_rhex(&Path::new(rhex_path).to_path_buf())?;
     rhex.verify_hash()?;
     println!("✅ R⬢ hash verified.");
     Ok(())

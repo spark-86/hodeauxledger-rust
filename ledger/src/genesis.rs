@@ -3,7 +3,8 @@ use hodeauxledger_core::Key;
 use hodeauxledger_core::rhex::intent::Intent;
 use hodeauxledger_core::rhex::rhex::Rhex;
 use hodeauxledger_core::rhex::signature::Signature;
-use hodeauxledger_io::disk::disk;
+use hodeauxledger_io::disk::key as diskkey;
+use hodeauxledger_io::disk::rhex as diskrhex;
 use std::path::Path;
 use std::time::SystemTime;
 
@@ -22,7 +23,7 @@ pub fn create_genesis(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
         .password
         .as_deref()
         .ok_or_else(|| anyhow::anyhow!("password must be specified"))?;
-    let sk = disk::load_key(Path::new(keyfile), password)?;
+    let sk = diskkey::load_key(Path::new(keyfile), password)?;
     let key = Key::new();
     key.from_bytes(&sk.to_bytes());
     let pk_bytes = key.to_bytes();
@@ -71,6 +72,6 @@ pub fn create_genesis(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
         sig: quorum_sig.into(),
     });
     let final_rhex = rhex.finalize()?;
-    disk::save_rhex(&Path::new(save_path).to_path_buf(), &final_rhex)?;
+    diskrhex::save_rhex(&Path::new(save_path).to_path_buf(), &final_rhex)?;
     Ok(())
 }

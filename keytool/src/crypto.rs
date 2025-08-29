@@ -3,7 +3,7 @@ use anyhow::anyhow;
 use ed25519_dalek::SigningKey;
 use hodeauxledger_core::crypto::b64::to_base64;
 use hodeauxledger_core::crypto::key::{self, Key};
-use hodeauxledger_io::disk::disk;
+use hodeauxledger_io::disk::key as diskkey;
 use std::path::Path;
 
 use crate::Cli;
@@ -13,21 +13,21 @@ pub fn save_encrypted_key(
     password: &str,
     secret_key: &SigningKey,
 ) -> Result<(), anyhow::Error> {
-    disk::save_key(save_path, password, secret_key)?;
+    diskkey::save_key(save_path, password, secret_key)?;
     Ok(())
 }
 
 pub fn save_hot_key(path: &Path, signing_key: &SigningKey) -> Result<(), anyhow::Error> {
-    disk::save_key_hot(path, signing_key)?;
+    diskkey::save_key_hot(path, signing_key)?;
     Ok(())
 }
 
 pub fn load_hot_key(path: &Path) -> Result<SigningKey, anyhow::Error> {
-    Ok(SigningKey::from_bytes(&disk::load_key_hot(path)?))
+    Ok(SigningKey::from_bytes(&diskkey::load_key_hot(path)?))
 }
 
 pub fn load_encrypted_key(path: &Path, password: &str) -> Result<SigningKey, anyhow::Error> {
-    let sk = disk::load_key(path, password)?;
+    let sk = diskkey::load_key(path, password)?;
     Ok(sk)
 }
 

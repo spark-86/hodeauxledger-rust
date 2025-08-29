@@ -1,6 +1,7 @@
 use clap::Parser;
 use futures::{SinkExt, StreamExt};
-use hodeauxledger_io::disk::disk;
+use hodeauxledger_io::disk::key as diskkey;
+use hodeauxledger_io::disk::rhex as diskrhex;
 use hodeauxledger_io::screen;
 use hodeauxledger_proto::codec::RhexCodec;
 use std::path::Path;
@@ -60,7 +61,7 @@ async fn submit_rhex(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
         println!("port: {}", port.unwrap_or("1984"));
     }
 
-    let rhex = disk::load_rhex(&Path::new(rhex_path).to_path_buf())?;
+    let rhex = diskrhex::load_rhex(&Path::new(rhex_path).to_path_buf())?;
     let addr = format!("{}:{}", host, port.unwrap_or("1984"));
     let stream = TcpStream::connect(addr).await?;
     let framed = Framed::new(stream, RhexCodec::new());
@@ -107,10 +108,10 @@ async fn main() -> anyhow::Result<()> {
 
     // get key
     let author_sk = match hot {
-        true => disk::load_key_hot(Path::new(keyfile))?,
+        true => diskkey::load_key_hot(Path::new(keyfile))?,
         false => {
             let pw = password.ok_or_else(|| anyhow::anyhow!("password must be specified"))?;
-            let key = disk::load_key(Path::new(keyfile), pw)?;
+            let key = diskkey::load_key(Path::new(keyfile), pw)?;
             key.to_bytes()
         }
     };

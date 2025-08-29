@@ -20,12 +20,9 @@ pub struct Rhex {
 }
 
 impl Rhex {
-    // Girl what the fuck have you done? This looks like garbage!
-    // I know we made this before we even really understood Rust
-    // but damn!  This is rough.
     pub fn new() -> Self {
         Self {
-            magic: *b"RHEX\x01\x00",
+            magic: *b"RHEX\x00\x01",
             intent: Intent::new([0u8; 32], "", "", [0u8; 32], [0u8; 32], "", "{}".into()),
             context: Context::new(),
             signatures: Vec::new(),
@@ -65,11 +62,6 @@ impl Rhex {
     pub fn current_hash(&self) -> anyhow::Result<[u8; 32]> {
         self.current_hash
             .ok_or_else(|| anyhow::anyhow!("Rhex not finalized: current_hash is None"))
-    }
-
-    /// Version from magic.
-    pub fn version(&self) -> anyhow::Result<u16> {
-        Self::get_version(&self.magic)
     }
 
     /// Pack full record as canonical CBOR.
