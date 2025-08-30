@@ -12,10 +12,14 @@ use std::cmp::Ordering;
 #[serde_as]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Rhex {
+    #[serde(rename = "🪄")]
     pub magic: [u8; 6],
+    #[serde(rename = "📦")]
     pub intent: Intent,
+    #[serde(rename = "🖼️")]
     pub context: Context,
     pub signatures: Vec<Signature>,
+    #[serde(rename = "⬇️🧬", with = "serde_bytes")]
     pub current_hash: Option<[u8; 32]>,
 }
 

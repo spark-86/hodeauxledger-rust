@@ -4,51 +4,57 @@ use owo_colors::OwoColorize;
 
 pub fn pretty_print_rhex(rhex: &Rhex) {
     println!("{{");
-    println!("  magic: {:?}", rhex.magic.yellow());
-    println!("  intent: {{");
+    println!("  {}: {:?}", "🪄", rhex.magic.yellow());
+    println!("  {}: {{", "📦");
     println!(
         "    {}: {}",
-        "previous_hash",
+        "⬅️🧬",
         to_base64(&rhex.intent.previous_hash).green().bold()
     );
-    println!("    {}: {}", "scope", rhex.intent.scope.green().bold());
-    println!("    {}: {}", "nonce", rhex.intent.nonce.green().bold());
+    println!("    {}: {}", "🔭", rhex.intent.scope.green().bold());
+    println!("    {}: {}", "🎲", rhex.intent.nonce.green().bold());
     println!(
         "    {}: {}",
-        "author_public_key",
+        "✍️🔓",
         to_base64(&rhex.intent.author_public_key).green().bold()
     );
     println!(
         "    {}: {}",
-        "usher_public_key",
+        "📣🔓",
         to_base64(&rhex.intent.usher_public_key).green().bold()
     );
-    println!(
-        "    {}: {}",
-        "record_type",
-        rhex.intent.record_type.green().bold()
-    );
-    println!("    {}: {}", "data", rhex.intent.data.green().bold());
+    println!("    {}: {}", "📄", rhex.intent.record_type.green().bold());
+    println!("    {}: {}", "📊", rhex.intent.data.green().bold());
     println!("  }}");
-    println!("  context: {{");
-    println!("    {}: {}", "at", rhex.context.at.yellow());
+    println!("  {}: {{", "🖼️");
+    println!("    {}: {}", "⏱️:", rhex.context.at.yellow());
     println!("  }}");
-    println!("  signatures: [");
+    println!("  🖊️🖊️🖊️: [");
     for s in &rhex.signatures {
         println!("    {{");
-        println!("      {}: {}", "sig_type", s.sig_type.to_string().yellow());
+        println!("      {}: {}", "🤘", sig_type_to_icon(s.sig_type));
         println!(
             "      {}: {}",
-            "public_key",
+            "🔓",
             to_base64(&s.public_key).green().bold()
         );
-        println!("      {}: {}", "sig", to_base64(&s.sig).green().bold());
+        println!("      {}: {}", "🖊️", to_base64(&s.sig).green().bold());
         println!("    }},");
     }
     println!("  ]");
     println!(
-        "  current_hash: {}",
+        "  {}: {}",
+        "⬇️🧬",
         to_base64(&rhex.current_hash.unwrap()).green().bold()
     );
     println!("}}");
+}
+
+fn sig_type_to_icon(sig_type: u8) -> String {
+    match sig_type {
+        0 => "✍️".to_string(),
+        1 => "📣".to_string(),
+        2 => "🤝".to_string(),
+        _ => "?".to_string(),
+    }
 }

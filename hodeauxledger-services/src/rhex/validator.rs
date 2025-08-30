@@ -2,6 +2,7 @@ use ed25519_dalek::{Signature as DalekSig, VerifyingKey};
 use hodeauxledger_core::{Key, Rhex};
 
 pub fn validate_rhex(rhex: &Rhex) -> bool {
+    let _ = rhex;
     true
 }
 

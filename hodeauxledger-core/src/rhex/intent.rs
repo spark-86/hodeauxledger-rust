@@ -4,12 +4,19 @@ use serde_with::serde_as;
 #[serde_as]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Intent {
+    #[serde(rename = "⬅️🧬", with = "serde_bytes")]
     pub previous_hash: [u8; 32],
+    #[serde(rename = "🔭")]
     pub scope: String,
+    #[serde(rename = "🎲")]
     pub nonce: String,
+    #[serde(rename = "✍️🔓", with = "serde_bytes")]
     pub author_public_key: [u8; 32],
+    #[serde(rename = "📣🔓", with = "serde_bytes")]
     pub usher_public_key: [u8; 32],
+    #[serde(rename = "📄")]
     pub record_type: String,
+    #[serde(rename = "📊")]
     pub data: serde_json::Value,
 }
 

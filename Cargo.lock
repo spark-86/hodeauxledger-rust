@@ -1098,6 +1098,7 @@ dependencies = [
  "hodeauxledger-core",
  "hodeauxledger-io",
  "hodeauxledger-proto",
+ "hodeauxledger-services",
  "owo-colors",
  "serde_cbor",
  "serde_json",

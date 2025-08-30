@@ -6,6 +6,7 @@ use hodeauxledger_core::rhex::signature::SigType;
 use hodeauxledger_core::{Key, to_base64};
 use hodeauxledger_core::{Rhex, Signature};
 use hodeauxledger_io::disk::rhex as diskrhex;
+use owo_colors::OwoColorize;
 
 use crate::{Cli, crypto};
 
@@ -26,8 +27,7 @@ pub fn sign_rhex(
     };
 
     // sign
-    let sign_key = Key::new();
-    sign_key.from_bytes(&sk.to_bytes());
+    let sign_key = Key::from_bytes(&sk.to_bytes());
     let sig = sign_key.sign(hash.as_ref())?;
 
     // append signature
@@ -80,20 +80,31 @@ pub fn verify_rhex(rhex: &Rhex, verbose: bool) -> Result<bool> {
         if st.is_err() {
             return Ok(false);
         }
-        let sigrec = st.unwrap();
-        let msg = match sigrec {
+        let sigrec_type = st.unwrap();
+        let msg = match sigrec_type {
             SigType::Author => rhex.to_author_hash()?,
             SigType::Usher => rhex.to_usher_hash()?,
             SigType::Quorum => rhex.to_quorum_hash()?,
         };
         if !sig_key.verify(&msg, &sig) {
             if verbose {
-                println!("❌ Signature verification failed for type {:?}", sigrec);
+                println!(
+                    "❌ Signature verification failed for type {:?}",
+                    sigrec_type
+                );
             }
             return Ok(false);
         }
         if verbose {
-            println!("✅ Signature verified for type {:?}", sigrec);
+            println!(
+                "{}:{}",
+                match sigrec_type {
+                    SigType::Author => "✍️🖊️✅ 🔑",
+                    SigType::Usher => "📣🖊️✅ 🔑",
+                    SigType::Quorum => "🤝🖊️✅ 🔑",
+                },
+                to_base64(&sigrec.public_key).bright_black()
+            )
         }
     }
     Ok(true)

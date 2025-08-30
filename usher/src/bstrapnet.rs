@@ -56,8 +56,7 @@ pub async fn bootstrap_network(
 
 fn build_request_rhex(usher_pk: [u8; 32], key: &[u8; 32]) -> Rhex {
     let nonce = Rhex::gen_nonce();
-    let author_key = Key::new();
-    author_key.from_bytes(key);
+    let author_key = Key::from_bytes(key);
     let author_pk = author_key.to_bytes();
     let data = serde_json::json!({
         "schema": "rhex://schema/request@1",

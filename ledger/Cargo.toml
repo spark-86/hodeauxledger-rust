@@ -7,6 +7,7 @@ edition = "2024"
 hodeauxledger-core = { path = "../hodeauxledger-core" }
 hodeauxledger-io = { path = "../hodeauxledger-io" }
 hodeauxledger-proto = { path = "../hodeauxledger-proto" }
+hodeauxledger-services = { path = "../hodeauxledger-services" }
 clap = { version = "4.5.45", features = ["derive"] }
 cursive = "0.21.1"
 owo-colors = "4.2.2"

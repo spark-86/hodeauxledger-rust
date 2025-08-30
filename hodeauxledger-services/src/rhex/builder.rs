@@ -5,7 +5,7 @@ use serde_json::json;
 pub fn build_request_head(scope: &str, sk: [u8; 32], usher_pk: [u8; 32]) -> Rhex {
     let data = json!({});
     let record_type = "request:head";
-    build_rhex(scope, sk, usher_pk, record_type, data)
+    build_rhex([0u8; 32], scope, sk, usher_pk, record_type, data)
 }
 
 /// Builds a R⬢ using supplied data and author signs
@@ -15,6 +15,7 @@ pub fn build_request_head(scope: &str, sk: [u8; 32], usher_pk: [u8; 32]) -> Rhex
 /// * `record_type` - R⬢ record type
 /// * `data` - JSON data payload
 pub fn build_rhex(
+    previous_hash: [u8; 32],
     scope: &str,
     sk: [u8; 32],
     usher_pk: [u8; 32],
@@ -22,13 +23,12 @@ pub fn build_rhex(
     data: serde_json::Value,
 ) -> Rhex {
     let nonce = &Rhex::gen_nonce();
-    let key = Key::new();
-    key.from_bytes(&sk);
+    let key = Key::from_bytes(&sk);
     let author_pk = key.to_bytes();
 
     // Build the intent
     let intent = Intent::new(
-        [0u8; 32],
+        previous_hash,
         scope,
         nonce,
         author_pk,
@@ -56,8 +56,7 @@ pub fn build_rhex(
 pub fn usher_sign(rhex: &Rhex, at: u64, sk: [u8; 32]) -> Rhex {
     let mut rhex = rhex.clone();
     rhex.context.at = at;
-    let key = Key::new();
-    key.from_bytes(&sk);
+    let key = Key::from_bytes(&sk);
     let usher_pk = key.to_bytes();
     let msg = rhex.to_usher_hash().unwrap();
     let signature = key.sign(&msg).unwrap();
@@ -72,8 +71,7 @@ pub fn usher_sign(rhex: &Rhex, at: u64, sk: [u8; 32]) -> Rhex {
 
 pub fn quorum_sign(rhex: &Rhex, sk: [u8; 32]) -> Rhex {
     let mut rhex = rhex.clone();
-    let key = Key::new();
-    key.from_bytes(&sk);
+    let key = Key::from_bytes(&sk);
     let quorum_pk = key.to_bytes();
     let msg = rhex.to_quorum_hash().unwrap();
     let signature = key.sign(&msg).unwrap();

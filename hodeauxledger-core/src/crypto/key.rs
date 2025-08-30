@@ -1,3 +1,4 @@
+use anyhow::{Result, bail};
 use ed25519_dalek::{Signature, Signer, SigningKey, Verifier, VerifyingKey};
 use getrandom;
 
@@ -15,7 +16,7 @@ impl Key {
 
     pub fn generate() -> Self {
         let mut seed = [0u8; 32];
-        getrandom::fill(&mut seed).unwrap();
+        getrandom::fill(&mut seed).expect("randomness failed");
         let sk = SigningKey::from_bytes(&seed);
         let pk = sk.verifying_key();
         Self {
@@ -28,30 +29,33 @@ impl Key {
         self.pk = Some(pk);
     }
 
-    pub fn sign(&self, message: &[u8]) -> Result<Signature, anyhow::Error> {
-        if self.sk.is_none() {
-            anyhow::bail!("no private key available for signing");
+    pub fn sign(&self, message: &[u8]) -> Result<Signature> {
+        if let Some(sk) = &self.sk {
+            Ok(sk.sign(message))
         } else {
-            Ok(self.sk.as_ref().unwrap().sign(message))
+            bail!("no private key available for signing");
         }
     }
 
     pub fn verify(&self, message: &[u8], signature: &Signature) -> bool {
-        if self.pk.is_none() {
-            return false;
+        if let Some(pk) = self.pk.as_ref() {
+            pk.verify(message, signature).is_ok()
+        } else {
+            false
         }
-        self.pk.unwrap().verify(message, signature).is_ok()
     }
 
-    /// Outputs the public key (pk) as [u8; 32]
+    /// Outputs the public key as [u8; 32]
+    /// (Consider renaming to `to_public_bytes` for clarity.)
     pub fn to_bytes(&self) -> [u8; 32] {
-        if self.pk.is_none() {
-            panic!("no public key available");
-        }
-        self.pk.as_ref().unwrap().to_bytes()
+        self.pk
+            .as_ref()
+            .expect("no public key available")
+            .to_bytes()
     }
 
-    pub fn from_bytes(&self, bytes: &[u8; 32]) -> Self {
+    /// Build a Key from a 32-byte secret seed (sets both sk and pk).
+    pub fn from_bytes(bytes: &[u8; 32]) -> Self {
         let sk = SigningKey::from_bytes(bytes);
         let pk = sk.verifying_key();
         Self {
@@ -61,12 +65,15 @@ impl Key {
     }
 
     pub fn to_string(&self) -> String {
-        format!(
-            "ed25519:{:?}",
-            to_base64(&self.sk.as_ref().unwrap().to_bytes())
-        )
+        let pk = self
+            .pk
+            .as_ref()
+            .expect("no public key available")
+            .to_bytes();
+        format!("ed25519:{}", to_base64(&pk))
     }
 }
+
 /* ---- generic helpers (if you want a single entry point) ---- */
 
 pub fn signing_key_to_sk64(sk: &SigningKey) -> [u8; 64] {
@@ -85,6 +92,6 @@ pub fn sk64_to_signing_key(sk64: &[u8; 64]) -> SigningKey {
     pk.copy_from_slice(&sk64[32..]);
     let sk = SigningKey::from_bytes(&seed);
     let derived_pk = sk.verifying_key().to_bytes();
-    assert_eq!(pk, derived_pk);
+    assert_eq!(pk, derived_pk, "provided pk does not match seed-derived pk");
     sk
 }

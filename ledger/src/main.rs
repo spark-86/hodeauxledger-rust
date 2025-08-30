@@ -1,4 +1,3 @@
-use clap::Parser;
 use cursive::{
     Cursive,
     view::{Nameable, Resizable},
@@ -9,55 +8,14 @@ use hodeauxledger_io::screen::pretty_print_rhex;
 use std::io::Write;
 use std::path::Path;
 
+use crate::argv::{BuildArgs, Command, FinalizeArgs, VerifyArgs};
+use clap::Parser;
+
+mod argv;
 mod craft;
 mod genesis;
 
 //const VERSION: &str = env!("CARGO_PKG_VERSION");
-
-#[derive(Parser, Debug)]
-#[command(name = "ledger", about = "HodeauxLedger Standard Tool")]
-struct Cli {
-    action: String,
-
-    #[arg(short, long)]
-    save: Option<String>,
-
-    #[arg(long)]
-    previous_hash: Option<String>,
-
-    #[arg(long)]
-    nonce: Option<String>,
-
-    #[arg(long)]
-    author_public_key: Option<String>,
-
-    #[arg(long)]
-    usher_public_key: Option<String>,
-
-    #[arg(long)]
-    data_file: Option<String>,
-
-    #[arg(long)]
-    record_type: Option<String>,
-
-    #[arg(long)]
-    scope: Option<String>,
-
-    #[arg(long)]
-    schema: Option<String>,
-
-    #[arg(short, long)]
-    rhex: Option<String>,
-
-    #[arg(short, long)]
-    verbose: bool,
-
-    #[arg(short, long)]
-    keyfile: Option<String>,
-
-    #[arg(short, long)]
-    password: Option<String>,
-}
 
 static RECORD_TYPES: &[&str] = &["policy:set", "scope:create", "scope:genesis"];
 const ID_RT_LABEL: &str = "record_type_label";
@@ -87,11 +45,8 @@ fn open_record_type_picker(siv: &mut Cursive) {
 }
 
 /// Presents a UI for building intents
-fn build_intent(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
-    let save_path = args
-        .save
-        .as_deref()
-        .ok_or_else(|| anyhow::anyhow!("save must be specified"))?;
+fn build_intent(args: &BuildArgs) -> anyhow::Result<(), anyhow::Error> {
+    let save_path = args.save.save.as_deref().unwrap_or("");
     println!("save path: {}", save_path);
     let mut siv = cursive::default();
 
@@ -133,16 +88,12 @@ fn build_intent(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
 }
 
 // Finalize a R⬢ by calculating it's current_hash and saving it
-fn finalize_rhex(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
-    let rhex_path = args
-        .rhex
-        .as_deref()
-        .ok_or_else(|| anyhow::anyhow!("rhex must be specified"))?;
-
+fn finalize_rhex(args: &FinalizeArgs) -> anyhow::Result<(), anyhow::Error> {
+    let rhex_path = &args.rhex;
     let rhex = diskrhex::load_rhex(&Path::new(rhex_path).to_path_buf())?;
     let rhex = rhex.finalize()?;
     // output completed R⬢
-    if let Some(save_path) = &args.save {
+    if let Some(save_path) = &args.save.save {
         diskrhex::save_rhex(&Path::new(save_path).to_path_buf(), &rhex)?;
         pretty_print_rhex(&rhex);
     } else {
@@ -154,11 +105,8 @@ fn finalize_rhex(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
 }
 
 /// Verifies the current_hash of the R⬢
-fn verify_current_hash(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
-    let rhex_path = args
-        .rhex
-        .as_deref()
-        .ok_or_else(|| anyhow::anyhow!("rhex must be specified"))?;
+fn verify_current_hash(args: &VerifyArgs) -> anyhow::Result<(), anyhow::Error> {
+    let rhex_path = &args.rhex;
     let rhex = diskrhex::load_rhex(&Path::new(rhex_path).to_path_buf())?;
     rhex.verify_hash()?;
     println!("✅ R⬢ hash verified.");
@@ -166,22 +114,19 @@ fn verify_current_hash(args: &Cli) -> anyhow::Result<(), anyhow::Error> {
 }
 
 fn main() -> anyhow::Result<()> {
-    let args = Cli::parse();
-    let action = args.action.as_str();
+    let args = argv::Cli::parse();
+    let action = args.cmd;
     //println!(
     //    "{}{}",
     //    "HodeauxLedger Tool v".magenta().bold(),
     //    VERSION.magenta().bold()
     //);
     match action {
-        "build" => build_intent(&args)?,
-        "craft" => craft::craft_intent(&args)?,
-        "finalize" => finalize_rhex(&args)?,
-        "verify" => verify_current_hash(&args)?,
-        "genesis" => genesis::create_genesis(&args)?,
-        _ => {
-            anyhow::bail!("unknown operation");
-        }
+        Command::Build(args) => build_intent(&args)?,
+        Command::Craft(args) => craft::craft_intent(&args)?,
+        Command::Finalize(args) => finalize_rhex(&args)?,
+        Command::Verify(args) => verify_current_hash(&args)?,
+        Command::Genesis(args) => genesis::create_genesis(&args)?,
     };
     Ok(())
 }

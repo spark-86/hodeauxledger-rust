@@ -11,8 +11,10 @@ use tokio_util::codec::Framed;
 
 use crate::bstrapnet::bootstrap_network;
 
+mod argv;
 mod bstrapnet;
 mod head;
+
 #[derive(Parser, Debug)]
 #[command(name = "usher", about = "HodeauxLedger Usher Tool")]
 struct Cli {
