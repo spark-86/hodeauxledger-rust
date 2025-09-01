@@ -5,6 +5,8 @@ pub const SIDEREAL_MS: i128 = 86_164_090;
 /// Micromarks per sidereal day (1e9).
 pub const MICROMARKS_PER_TURN: i128 = 1_000_000_000;
 
+pub const EPOCH_AT_UNIX_MS: i128 = 1756704877985;
+
 /// Clock that converts wall time to GT relative to a ledger epoch (in ms).
 #[derive(Clone, Copy, Debug)]
 pub struct GTClock {
@@ -15,7 +17,13 @@ pub struct GTClock {
 impl GTClock {
     /// Create a clock with the epoch pulled from your genesis record (ms).
     pub fn new(epoch_unix_ms: i128) -> Self {
-        Self { epoch_unix_ms }
+        if epoch_unix_ms == 0 {
+            Self {
+                epoch_unix_ms: EPOCH_AT_UNIX_MS,
+            }
+        } else {
+            Self { epoch_unix_ms }
+        }
     }
 
     /// Change the epoch later if needed.
@@ -29,6 +37,10 @@ impl GTClock {
         let delta_ms = now_ms - self.epoch_unix_ms;
         // Convert ms → micromarks: floor division with full precision in i128.
         delta_ms.saturating_mul(MICROMARKS_PER_TURN) / SIDEREAL_MS
+    }
+
+    pub fn now_micromarks_u64(&self) -> u64 {
+        self.now_micromarks() as u64
     }
 
     /// Split into (turn, micromarks_into_turn).

@@ -4,16 +4,16 @@
 
 -   💡 = scope:genesis - Beginning of a scope
 -   📜 = policy:\* - Setting of a scope policy
-    -   📜👑🟢 = policy:authority+
-    -   📜👑🔴 = policy:authority-
     -   ⛓️ = Append Rules
         -   📄 = record_type
         -   🤝☝️ = quorum k required
         -   ↔️ = rate per mark
 -   🔑🟢 = key:grant - Granting of a key to a role
 -   🔑🔴 = key:revoke - Revoking of a key from a role
--   🔭🟢 = scope:create - Creating a new subscope
--   🔭🔴 = scope:seal - Sealing a subscope from append
+-   👑🟢 = authority:grant
+-   👑🔴 = authority:revoke
+-   🌐🟢 = scope:create - Creating a new subscope
+-   🌐🔴 = scope:seal - Sealing a subscope from append
 -   📩 = request: - All request record types
 -   📦 = record: - All record storage types
 -   💩 = steward: - Steward alert types, can be followed with others for more detail
@@ -26,11 +26,10 @@
 ## R⬢ (Rhex) Record Fields
 
 -   🪄 [magic] - Magic is the control bytes. First 4 are always "RHEX", the next is 8 flags, and the final byte is the version number.
-    -   🎛️ [control_bytes] - 8 flags used for transport control.
     -   ✨ [version] - version number. Incremental.
 -   🎯 [intent] - The intent is the initial information provided by the Author.
     -   ⬅️🧬 [previous_hash] - Hash of the previous record
-    -   🔭 [scope] - Scope name
+    -   🌐 [scope] - Scope name
     -   🎲 [nonce] - Nonce to prevent replay attacks
     -   ✍️🔓 [author_public_key] - Author's public key
     -   📣🔓 [usher_public_key] - Usher's public key
@@ -47,6 +46,8 @@
 ## Misc
 
 -   📐 = schema
--   ⛓️ = allowed rhex
+-   ⛓️ = allowed rhex rules
 -   ⛓️‍💥 = invalid rhex
 -   🥐 = roles
+-   ↔️ = rate
+-   🤝☝️ = quorum count required

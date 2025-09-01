@@ -12,5 +12,6 @@ tokio-util = "0.7.16"
 hodeauxledger-core = { path = "../hodeauxledger-core" }
 hodeauxledger-proto = { path = "../hodeauxledger-proto" }
 hodeauxledger-io = { path = "../hodeauxledger-io" }
+hodeauxledger-services = { path = "../hodeauxledger-services" }
 bytes = "1.10.1"
 serde_json = "1.0.143"

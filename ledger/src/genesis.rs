@@ -38,7 +38,7 @@ pub fn create_genesis(args: &GenesisArgs) -> anyhow::Result<(), anyhow::Error> {
     let mut rhex = builder::build_rhex(
         [0u8; 32],
         &scope,
-        sk.to_bytes(),
+        &Key::from_bytes(&sk.to_bytes()),
         pk_bytes,
         "scope:genesis",
         data,

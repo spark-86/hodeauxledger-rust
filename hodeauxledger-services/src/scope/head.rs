@@ -1,4 +1,3 @@
-pub fn get_scope_head(scope: &str) -> Result<[u8; 32], anyhow::Error> {
-    let _ = scope;
+pub fn get_head_from_net(scope: &str) -> Result<[u8; 32], anyhow::Error> {
     Ok([0u8; 32])
 }

@@ -19,6 +19,11 @@ fn get_scope_list(ledger_path: &str) -> Result<Vec<Scope>, anyhow::Error> {
 }
 
 pub fn bootstrap(verbose: bool) -> anyhow::Result<()> {
+    // Load the root authorities into the cache
+    if verbose {
+        println!("Loading root authorities...");
+    }
+
     // Load the scope table to see which scopes we need to take care
     // of.
     if verbose {

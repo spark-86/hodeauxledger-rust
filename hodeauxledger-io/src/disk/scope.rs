@@ -1,3 +1,4 @@
+use crate::cache::{cache::Cache, rhex::cache_rhex};
 use crate::disk::rhex::load_rhex;
 use anyhow::{Result, bail};
 use hodeauxledger_core::{rhex::rhex::Rhex, scope::table::ScopeTable};
@@ -6,11 +7,17 @@ use std::{
     path::{Path, PathBuf},
 };
 
-pub fn load_scope(ledger_path: &str, scope: &str) -> Result<Vec<Rhex>> {
+pub enum ScopeSink {
+    Vec,
+    Db,
+}
+
+pub fn load_scope(ledger_path: &str, scope: &str, sink: ScopeSink) -> Result<Vec<Rhex>> {
     let dir = format!("{}/{}", ledger_path, scope);
 
     let base = Path::new(&dir);
     let mut out = Vec::new();
+    let cache = Cache::connect("cache.db")?;
 
     // 1) Load scope:genesis first
     let genesis_path =
@@ -25,8 +32,14 @@ pub fn load_scope(ledger_path: &str, scope: &str) -> Result<Vec<Rhex>> {
     } else {
         bail!("genesis has no ⬇️🧬");
     };
-
-    out.push(curr);
+    match sink {
+        ScopeSink::Vec => {
+            out.push(curr);
+        }
+        ScopeSink::Db => {
+            cache_rhex(&cache.conn, &curr)?;
+        }
+    }
 
     loop {
         // Try to find the next file in the chain
@@ -40,7 +53,14 @@ pub fn load_scope(ledger_path: &str, scope: &str) -> Result<Vec<Rhex>> {
         } else {
             bail!("child record missing ⬇️🧬");
         };
-        out.push(candidate);
+        match sink {
+            ScopeSink::Vec => {
+                out.push(candidate);
+            }
+            ScopeSink::Db => {
+                cache_rhex(&cache.conn, &candidate)?;
+            }
+        }
     }
 
     Ok(out)

@@ -27,7 +27,10 @@ target
 
 
 # Added by Veronica
+/data
 .vs
-# So we are accidently pushing our R⬢ to github
+# So we aren't accidently pushing our R⬢ to github
 *.rhex
 *.key
+
+cache.sqlite

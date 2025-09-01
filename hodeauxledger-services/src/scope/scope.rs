@@ -59,3 +59,22 @@ pub fn remove_scope_from_table(scope_name: &str) -> Result<(), anyhow::Error> {
     save_scope_table(&st)?;
     Ok(())
 }
+
+pub fn scope_from_disk_to_cache(scope_name: &str) -> Result<(), anyhow::Error> {
+    let scope_table = get_scope_table();
+    let scope = scope_table.lookup(scope_name);
+    if scope.is_none() {
+        return Err(anyhow::anyhow!("scope not found"));
+    }
+    diskscope::load_scope("./data/ledger", scope_name, diskscope::ScopeSink::Db)?;
+
+    Ok(())
+}
+
+pub fn bootstrap_rhex_cache() -> Result<(), anyhow::Error> {
+    let scope_table = get_scope_table();
+    for scope in scope_table.scopes {
+        scope_from_disk_to_cache(scope.name.as_str())?;
+    }
+    Ok(())
+}

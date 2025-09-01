@@ -1,4 +1,4 @@
-use crate::argv::{GenerateArgs, ViewArgs};
+use crate::argv::{EncryptArgs, GenerateArgs, HotArgs, ViewArgs};
 use crate::crypto;
 use ed25519_dalek::SigningKey;
 use hodeauxledger_core::crypto::b64::to_base64;
@@ -45,9 +45,10 @@ pub fn generate_key(args: GenerateArgs, verbose: bool, quiet: bool) -> Result<()
     if !quiet {
         println!("Generating keypair...");
     }
-    let sk = Key::new();
-    let sk64 = sk.to_bytes();
+    let sk = Key::generate();
     let signing_key = sk.sk.unwrap();
+    let sk64 = key::signing_key_to_sk64(&signing_key);
+
     let pk = signing_key.verifying_key();
     if !quiet {
         println!("Public key: {}", to_base64(&pk.to_bytes()));
@@ -97,5 +98,39 @@ pub fn view_key(args: ViewArgs, verbose: bool, quiet: bool) -> Result<(), anyhow
         println!("Private key: {}", to_base64(&sk_bytes));
     }
 
+    Ok(())
+}
+
+pub fn hot(args: HotArgs, verbose: bool, quiet: bool) -> Result<(), anyhow::Error> {
+    let input_path = args.input;
+    let password_opt = args.password;
+    let output_path = args.output;
+
+    if !quiet && verbose {
+        println!("Loading key from {}", input_path);
+    }
+    let sk: SigningKey = crypto::load_encrypted_key(Path::new(&input_path), &password_opt)?;
+
+    if !quiet && verbose {
+        println!("Saving key to {}", output_path);
+    }
+    crypto::save_hot_key(Path::new(&output_path), &sk)?;
+    Ok(())
+}
+
+pub fn encrypt(args: EncryptArgs, verbose: bool, quiet: bool) -> Result<(), anyhow::Error> {
+    let input_path = args.input;
+    let password = args.password;
+    let output_path = args.output;
+
+    if !quiet && verbose {
+        println!("Loading key from {}", input_path);
+    }
+    let sk: SigningKey = crypto::load_hot_key(Path::new(&input_path))?;
+
+    if !quiet && verbose {
+        println!("Saving key to {}", output_path);
+    }
+    crypto::save_encrypted_key(Path::new(&output_path), &password, &sk)?;
     Ok(())
 }

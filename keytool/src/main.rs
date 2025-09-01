@@ -29,6 +29,8 @@ fn main() -> anyhow::Result<()> {
         Command::View(view_args) => crypto::view_key(view_args, args.verbose, args.quiet)?,
         Command::Sign(sign_args) => sign::sign(sign_args, args.verbose, args.quiet)?,
         Command::Verify(verify_args) => sign::verify(verify_args, args.verbose, args.quiet)?,
+        Command::Hot(hot_args) => crypto::hot(hot_args, args.verbose, args.quiet)?,
+        Command::Encrypt(encrypt_args) => crypto::encrypt(encrypt_args, args.verbose, args.quiet)?,
     };
     Ok(())
 }

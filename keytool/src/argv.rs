@@ -30,6 +30,12 @@ pub enum Command {
 
     // View
     View(ViewArgs),
+
+    // Make an enc key hot
+    Hot(HotArgs),
+
+    // Encrypt hot key
+    Encrypt(EncryptArgs),
 }
 
 #[derive(Args, Debug)]
@@ -96,4 +102,32 @@ pub struct ViewArgs {
 
     #[arg(long)]
     pub show_private_key: bool,
+}
+
+#[derive(Args, Debug)]
+pub struct HotArgs {
+    /// 🔑 file to load
+    #[arg(short, long)]
+    pub input: String,
+
+    #[arg(short, long)]
+    pub password: String,
+
+    /// 🔑 file to save
+    #[arg(short, long)]
+    pub output: String,
+}
+
+#[derive(Args, Debug)]
+pub struct EncryptArgs {
+    /// 🔑 file to load
+    #[arg(short, long)]
+    pub input: String,
+
+    #[arg(short, long)]
+    pub password: String,
+
+    /// 🔑 file to save
+    #[arg(short, long)]
+    pub output: String,
 }

@@ -1,0 +1,9 @@
+[
+    {
+        "name": "HodeauxLedger Core Authority Usher",
+        "host": "34.71.60.51",
+        "port": 1984,
+        "public_key": "1c0kCmO18hx7HKVAYG-8qc3xK0vyJvJtdFaiI4ODves",
+        "priority": 20
+    }
+]

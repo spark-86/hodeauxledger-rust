@@ -1,12 +1,4 @@
 use hodeauxledger_core::{Intent, Key, Rhex, Signature};
-use serde_json::json;
-
-/// Builds the standard `request:head` R⬢
-pub fn build_request_head(scope: &str, sk: [u8; 32], usher_pk: [u8; 32]) -> Rhex {
-    let data = json!({});
-    let record_type = "request:head";
-    build_rhex([0u8; 32], scope, sk, usher_pk, record_type, data)
-}
 
 /// Builds a R⬢ using supplied data and author signs
 /// * `scope` - R⬢ scope
@@ -17,13 +9,13 @@ pub fn build_request_head(scope: &str, sk: [u8; 32], usher_pk: [u8; 32]) -> Rhex
 pub fn build_rhex(
     previous_hash: [u8; 32],
     scope: &str,
-    sk: [u8; 32],
+    sk: &Key,
     usher_pk: [u8; 32],
     record_type: &str,
     data: serde_json::Value,
 ) -> Rhex {
     let nonce = &Rhex::gen_nonce();
-    let key = Key::from_bytes(&sk);
+    let key = sk;
     let author_pk = key.to_bytes();
 
     // Build the intent

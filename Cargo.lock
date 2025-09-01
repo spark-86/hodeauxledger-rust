@@ -1070,7 +1070,7 @@ dependencies = [
 
 [[package]]
 name = "keytool"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "blake3",
@@ -1886,6 +1886,7 @@ dependencies = [
  "hodeauxledger-core",
  "hodeauxledger-io",
  "hodeauxledger-proto",
+ "hodeauxledger-services",
  "serde_json",
  "tokio",
  "tokio-util",

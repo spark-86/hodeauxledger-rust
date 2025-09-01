@@ -2,10 +2,11 @@ use anyhow::Result;
 use bytes::BytesMut;
 use clap::Parser;
 use futures::{SinkExt, StreamExt};
-use hodeauxledger_core::Rhex;
+use hodeauxledger_core::{Key, Rhex};
+use hodeauxledger_io::disk::key as diskkey;
 use hodeauxledger_proto::codec::RhexCodec;
-use std::net::SocketAddr;
 use std::time::Instant;
+use std::{net::SocketAddr, path::Path};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_util::codec::{Encoder, Framed};
 
@@ -77,6 +78,11 @@ async fn handle_conn(conn: TcpStream, addr: SocketAddr, verbose: bool) -> Result
     let mut stats = ConnStats::default();
     let mut codec = RhexCodec::new(); // used locally to measure encoded sizes
 
+    // FIXME: This is so not the answer but I so don't feel like fucking
+    // with it right now so we're gonna load from "./hot.key" and call
+    // it good for the day.
+    let hot_key32 = diskkey::load_key_hot(Path::new("./hot.key"))?;
+    let hot_key = Key::from_bytes(&hot_key32);
     // Read frames until the peer closes or an error occurs.
     while let Some(in_msg) = stream.next().await {
         let started = Instant::now();
@@ -103,20 +109,21 @@ async fn handle_conn(conn: TcpStream, addr: SocketAddr, verbose: bool) -> Result
         //   - maybe emit quorum status / finalization
         // For now, echo the same record as a simple ACK.
         // (We also measure the encoded outbound size the same way.)
+        let out_rhex = processor::process_rhex(&rhex_in, &hot_key, verbose)?;
 
-        let mut out_buf = BytesMut::new();
-        codec.encode(rhex_in.clone(), &mut out_buf)?;
-        let out_len = out_buf.len();
-
-        sink.send(rhex_in).await?;
-        sink.flush().await?;
-        stats.add_out(out_len);
-
+        for rhex in out_rhex {
+            let mut out_buf = BytesMut::new();
+            codec.encode(rhex.clone(), &mut out_buf)?;
+            let out_len = out_buf.len();
+            sink.send(rhex).await?;
+            sink.flush().await?;
+            stats.add_out(out_len);
+        }
         if verbose {
             let elapsed = started.elapsed();
             println!(
                 "📤 {addr} out: {} bytes | action: echo | took: {} ms",
-                out_len,
+                stats.bytes_out,
                 elapsed.as_millis()
             );
         }
