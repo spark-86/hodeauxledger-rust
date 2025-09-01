@@ -12,21 +12,22 @@ use std::cmp::Ordering;
 #[serde_as]
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Rhex {
-    #[serde(rename = "🪄")]
+    #[serde(rename = "🪄", alias = "magic", with = "serde_bytes")]
     pub magic: [u8; 6],
-    #[serde(rename = "📦")]
+    #[serde(rename = "🎯", alias = "intent")]
     pub intent: Intent,
-    #[serde(rename = "🖼️")]
+    #[serde(rename = "🖼️", alias = "context")]
     pub context: Context,
+    #[serde(rename = "🖊️🖊️🖊️", alias = "signatures")]
     pub signatures: Vec<Signature>,
-    #[serde(rename = "⬇️🧬", with = "serde_bytes")]
+    #[serde(rename = "⬇️🧬", alias = "current_hash", with = "serde_bytes")]
     pub current_hash: Option<[u8; 32]>,
 }
 
 impl Rhex {
     pub fn new() -> Self {
         Self {
-            magic: *b"RHEX\x00\x01",
+            magic: *b"RHEX\x00\x00",
             intent: Intent::new([0u8; 32], "", "", [0u8; 32], [0u8; 32], "", "{}".into()),
             context: Context::new(),
             signatures: Vec::new(),
@@ -37,7 +38,7 @@ impl Rhex {
     /// Start a draft Rhex (not yet hashed).
     pub fn draft(intent: Intent, signatures: Vec<Signature>) -> Self {
         Self {
-            magic: *b"RHEX\x01\x00",
+            magic: *b"RHEX\x00\x00",
             intent,
             context: Context { at: 0 },
             signatures,
@@ -168,7 +169,9 @@ impl Rhex {
     }
 
     pub fn validate(&self) -> anyhow::Result<()> {
-        if self.magic != *b"RHEX\x01\x00" {
+        // FIXME: This is wrong. byte 4 should be flags so we should
+        // accept what the fuck ever.
+        if self.magic != *b"RHEX\x00\x00" {
             anyhow::bail!("invalid magic");
         }
 

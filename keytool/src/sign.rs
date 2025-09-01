@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use anyhow::{Context, Ok, Result, anyhow, bail, ensure};
+use anyhow::{Context, Ok, Result, bail, ensure};
 use ed25519_dalek::{Signature as DalekSig, SigningKey, VerifyingKey};
 use hodeauxledger_core::rhex::signature::SigType;
 use hodeauxledger_core::{Key, to_base64};
@@ -8,7 +8,8 @@ use hodeauxledger_core::{Rhex, Signature};
 use hodeauxledger_io::disk::rhex as diskrhex;
 use owo_colors::OwoColorize;
 
-use crate::{Cli, crypto};
+use crate::argv::{SignArgs, VerifyArgs};
+use crate::crypto;
 
 pub fn sign_rhex(
     mut rhex: Rhex,
@@ -64,7 +65,7 @@ fn check_for_sigs(rhex: &Rhex, sig_type: SigType) -> Result<()> {
     Ok(())
 }
 
-pub fn verify_rhex(rhex: &Rhex, verbose: bool) -> Result<bool> {
+pub fn verify_rhex(rhex: &Rhex, verbose: bool, quiet: bool) -> Result<bool> {
     for sigrec in &rhex.signatures {
         // Get VerifyingKey from our signatures public key
         let vk =
@@ -87,7 +88,7 @@ pub fn verify_rhex(rhex: &Rhex, verbose: bool) -> Result<bool> {
             SigType::Quorum => rhex.to_quorum_hash()?,
         };
         if !sig_key.verify(&msg, &sig) {
-            if verbose {
+            if verbose && !quiet {
                 println!(
                     "❌ Signature verification failed for type {:?}",
                     sigrec_type
@@ -95,42 +96,38 @@ pub fn verify_rhex(rhex: &Rhex, verbose: bool) -> Result<bool> {
             }
             return Ok(false);
         }
-        if verbose {
+        let hash = match sigrec_type {
+            SigType::Author => rhex.to_author_hash()?,
+            SigType::Usher => rhex.to_usher_hash()?,
+            SigType::Quorum => rhex.to_quorum_hash()?,
+        };
+        if verbose && !quiet {
             println!(
-                "{}:{}",
+                "{}:{} 🧬:{}",
                 match sigrec_type {
                     SigType::Author => "✍️🖊️✅ 🔑",
                     SigType::Usher => "📣🖊️✅ 🔑",
                     SigType::Quorum => "🤝🖊️✅ 🔑",
                 },
-                to_base64(&sigrec.public_key).bright_black()
+                to_base64(&sigrec.public_key).bright_black(),
+                to_base64(&hash).bright_black()
             )
         }
     }
     Ok(true)
 }
 
-pub fn sign(args: Cli) -> Result<(), anyhow::Error> {
+pub fn sign(args: SignArgs, verbose: bool, quiet: bool) -> Result<(), anyhow::Error> {
     // Parse command line args
-    let load = args
-        .load
-        .as_deref()
-        .ok_or_else(|| anyhow::anyhow!("load must be specified"))?;
-    let password_opt = args.password.as_deref();
+    let load = args.load;
+    let password_opt = args.password;
     let hot = args.hot;
-    let verbose = args.verbose;
     if !hot && password_opt.is_none() {
         anyhow::bail!("password must be specified when not using --hot");
     }
-    let password = password_opt.unwrap_or("");
-    let rhex_in = args
-        .rhex
-        .as_deref()
-        .ok_or_else(|| anyhow::anyhow!("rhex must be specified"))?;
-    let rhex_output = args
-        .rhex_output
-        .as_deref()
-        .ok_or_else(|| anyhow!("rhex_output must be specified"))?;
+    let password = password_opt.unwrap_or("".to_string());
+    let rhex_input = args.rhex_input;
+    let rhex_output = args.rhex_output;
     let signature_type = match args.signature_type.as_deref() {
         Some("author") | Some("0") => SigType::Author,
         Some("usher") | Some("1") => SigType::Usher,
@@ -144,19 +141,19 @@ pub fn sign(args: Cli) -> Result<(), anyhow::Error> {
     };
 
     // Load the key to sign with
-    if verbose {
+    if verbose && !quiet {
         println!("Loading key from {}", load);
     }
     let sk = if hot {
-        crypto::load_hot_key(Path::new(load))?
+        crypto::load_hot_key(Path::new(&load))?
     } else {
-        crypto::load_encrypted_key(Path::new(load), password)?
+        crypto::load_encrypted_key(Path::new(&load), &password)?
     };
     println!("Public key: {}", to_base64(&sk.verifying_key().to_bytes()));
     if verbose {
-        println!("Loading R⬢ from {}", rhex_in);
+        println!("Loading R⬢ from {}", &rhex_input);
     }
-    let p = Path::new(rhex_in);
+    let p = Path::new(&rhex_input);
     let rhex = diskrhex::load_rhex(&p.to_path_buf())?;
 
     let done_rhex = match signature_type {
@@ -165,18 +162,14 @@ pub fn sign(args: Cli) -> Result<(), anyhow::Error> {
         SigType::Quorum => sign_rhex(rhex, signature_type, &sk, verbose)?,
     };
 
-    diskrhex::save_rhex(&Path::new(rhex_output).to_path_buf(), &done_rhex)?;
+    diskrhex::save_rhex(&Path::new(&rhex_output).to_path_buf(), &done_rhex)?;
     Ok(())
 }
 
-pub fn verify(args: Cli) -> Result<(), anyhow::Error> {
-    let rhex_in = args
-        .rhex
-        .as_deref()
-        .ok_or_else(|| anyhow!("rhex must be specified"))?;
-    let verbose = args.verbose;
-    let rhex = diskrhex::load_rhex(&Path::new(rhex_in).to_path_buf())?;
-    let err = verify_rhex(&rhex, verbose);
+pub fn verify(args: VerifyArgs, verbose: bool, quiet: bool) -> Result<(), anyhow::Error> {
+    let rhex_in = args.input;
+    let rhex = diskrhex::load_rhex(&Path::new(&rhex_in).to_path_buf())?;
+    let err = verify_rhex(&rhex, verbose, quiet);
     if err.is_err() {
         anyhow::bail!("Signature verification failed");
     }

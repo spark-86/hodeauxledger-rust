@@ -35,7 +35,7 @@ pub fn retrieve_rhex(conn: &Connection, current_hash: &[u8; 32]) -> anyhow::Resu
     let mut rows = stmt.query(params![current_hash])?;
 
     let mut out_rhex = Rhex {
-        magic: *b"RHEX\x01\x00",
+        magic: *b"RHEX\x00\x00",
         intent: hodeauxledger_core::rhex::intent::Intent {
             previous_hash: [0u8; 32],
             scope: String::new(),

@@ -22,11 +22,11 @@ pub fn bootstrap(verbose: bool) -> anyhow::Result<()> {
     // Load the scope table to see which scopes we need to take care
     // of.
     if verbose {
-        println!("🔭 Loading scope table...");
+        println!("Loading 🌐 table...");
     }
     let scope_list = get_scope_list("./ledger/")?;
 
     // Verify that our status is current in the list of scopes
-
+    for scope in scope_list {}
     Ok(())
 }

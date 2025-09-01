@@ -6,13 +6,13 @@ use serde_with::{Bytes, serde_as};
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Signature {
     /// 0=author, 1=usher, 2=quorum (others reserved)
-    #[serde(rename = "🤘")]
+    #[serde(rename = "🤘", alias = "sig_type")]
     pub sig_type: u8,
     #[serde_as(as = "Bytes")]
-    #[serde(rename = "🔓")]
+    #[serde(rename = "🔓", alias = "public_key")]
     pub public_key: [u8; 32],
     #[serde_as(as = "Bytes")]
-    #[serde(rename = "🖊️")]
+    #[serde(rename = "🖊️", alias = "sig")]
     pub sig: [u8; 64],
 }
 

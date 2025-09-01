@@ -5,6 +5,7 @@ pub struct Rule {
     pub record_type: String,
     pub append_roles: Vec<String>,
     pub quorum_k: u8,
+    pub quorum_roles: Vec<String>,
     pub rate_per_mark: u64,
 }
 
@@ -15,6 +16,7 @@ impl Rule {
             record_type: record_type.to_string(),
             append_roles: append_roles.iter().map(|s| s.to_string()).collect(),
             quorum_k,
+            quorum_roles: vec![],
             rate_per_mark,
         }
     }
@@ -23,5 +25,9 @@ impl Rule {
     /// E.g. if rule allows ["authority", "usher"] and we have ["mirror", "usher"],
     pub fn is_in_roles(&self, roles: &[&String]) -> bool {
         roles.iter().any(|role| self.append_roles.contains(role))
+    }
+
+    pub fn is_in_quorum_roles(&self, roles: &[&String]) -> bool {
+        roles.iter().any(|role| self.quorum_roles.contains(role))
     }
 }

@@ -1,73 +1,46 @@
 use crate::disk::rhex::load_rhex;
-use anyhow::{Result, anyhow, bail};
+use anyhow::{Result, bail};
 use hodeauxledger_core::{rhex::rhex::Rhex, scope::table::ScopeTable};
 use std::{
     fs,
     path::{Path, PathBuf},
 };
 
-pub fn load_scope(dir: &str) -> Result<Vec<Rhex>> {
-    let base = Path::new(dir);
+pub fn load_scope(ledger_path: &str, scope: &str) -> Result<Vec<Rhex>> {
+    let dir = format!("{}/{}", ledger_path, scope);
+
+    let base = Path::new(&dir);
     let mut out = Vec::new();
 
     // 1) Load scope:genesis first
-    let genesis_path = base.join("genesis.rhex");
+    let genesis_path =
+        base.join("0000000000000000000000000000000000000000000000000000000000000000.rhex");
     if !genesis_path.exists() {
         bail!("Missing genesis file: {}", genesis_path.display());
     }
-
     let curr = load_rhex(&genesis_path)?;
-    let mut working_hash = curr
-        .current_hash
-        .ok_or_else(|| anyhow!("genesis has no current_hash"))?;
+
+    let mut working_hash = if curr.current_hash.is_some() {
+        curr.current_hash.unwrap()
+    } else {
+        bail!("genesis has no ⬇️🧬");
+    };
 
     out.push(curr);
 
-    // 2) Walk forward: find the one file whose previous_hash == working_hash
     loop {
-        // Try to find a child file in this directory.
-        let mut found_child: Option<(PathBuf, Rhex)> = None;
-
-        for entry in fs::read_dir(base)? {
-            let entry = entry?;
-            let p = entry.path();
-
-            // skip non-files and genesis
-            if !p.is_file() {
-                continue;
-            }
-            if p.file_name().and_then(|s| s.to_str()) == Some("genesis.rhex") {
-                continue;
-            }
-            if p.extension().and_then(|s| s.to_str()) != Some("rhex") {
-                continue;
-            }
-
-            // Load candidate and check previous_hash
-            let candidate = match load_rhex(&p) {
-                Ok(x) => x,
-                Err(_) => continue, // skip unreadables
-            };
-
-            // Only advance if this file says its previous_hash == current working_hash
-            if candidate.intent.previous_hash == working_hash {
-                found_child = Some((p.clone(), candidate));
-                break;
-            }
+        // Try to find the next file in the chain
+        let new_file = base.join(format!("{}.rhex", to_hex(&working_hash)));
+        if !new_file.exists() {
+            break;
         }
-
-        match found_child {
-            Some((_path, child)) => {
-                working_hash = child
-                    .current_hash
-                    .ok_or_else(|| anyhow!("child record missing current_hash"))?;
-                out.push(child);
-            }
-            None => {
-                // No child found → we've hit the head for this scope.
-                break;
-            }
-        }
+        let candidate = load_rhex(&new_file)?;
+        working_hash = if candidate.current_hash.is_some() {
+            candidate.current_hash.unwrap()
+        } else {
+            bail!("child record missing ⬇️🧬");
+        };
+        out.push(candidate);
     }
 
     Ok(out)
@@ -95,4 +68,13 @@ pub fn save_scope_table(ledger_path: &str, table: &ScopeTable) -> Result<()> {
     let table_str = table.to_string();
     fs::write(&filename, table_str)?;
     Ok(())
+}
+
+pub fn to_hex(bytes: &[u8]) -> String {
+    let mut s = String::with_capacity(bytes.len() * 2);
+    for &b in bytes {
+        use std::fmt::Write;
+        write!(&mut s, "{:02x}", b).unwrap();
+    }
+    s
 }

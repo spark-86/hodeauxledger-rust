@@ -1,46 +1,13 @@
 use clap::Parser;
 use owo_colors::OwoColorize;
 
+use crate::argv::Command;
+
+mod argv;
 mod crypto;
 mod sign;
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
-
-#[derive(Parser, Debug)]
-#[command(name = "keytool", about = "HodeauxLedger Key Tool")]
-struct Cli {
-    action: String,
-
-    #[arg(short, long)]
-    load: Option<String>,
-
-    #[arg(short, long)]
-    save: Option<String>,
-
-    #[arg(long)]
-    hot: bool,
-
-    #[arg(short, long)]
-    password: Option<String>,
-
-    #[arg(long)]
-    show_private_key: bool,
-
-    #[arg(short, long)]
-    verbose: bool,
-
-    #[arg(short, long)]
-    quiet: bool,
-
-    #[arg(short, long)]
-    rhex: Option<String>,
-
-    #[arg(long)]
-    signature_type: Option<String>,
-
-    #[arg(long)]
-    rhex_output: Option<String>,
-}
 
 fn show_banner() {
     println!(
@@ -51,19 +18,17 @@ fn show_banner() {
 }
 
 fn main() -> anyhow::Result<()> {
-    let args: Cli = Cli::parse();
-    let action = args.action.as_str();
+    let args = argv::Cli::parse();
     if !args.quiet {
         show_banner();
     }
-    match action {
-        "generate" => crypto::generate_key(args)?,
-        "view" => crypto::view_key(args)?,
-        "sign" => sign::sign(args)?,
-        "verify" => sign::verify(args)?,
-        _ => {
-            anyhow::bail!("unknown operation");
+    match args.cmd {
+        Command::Generate(generate_args) => {
+            crypto::generate_key(generate_args, args.verbose, args.quiet)?
         }
+        Command::View(view_args) => crypto::view_key(view_args, args.verbose, args.quiet)?,
+        Command::Sign(sign_args) => sign::sign(sign_args, args.verbose, args.quiet)?,
+        Command::Verify(verify_args) => sign::verify(verify_args, args.verbose, args.quiet)?,
     };
     Ok(())
 }

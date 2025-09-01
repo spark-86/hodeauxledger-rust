@@ -59,7 +59,7 @@ fn build_request_rhex(usher_pk: [u8; 32], key: &[u8; 32]) -> Rhex {
     let author_key = Key::from_bytes(key);
     let author_pk = author_key.to_bytes();
     let data = serde_json::json!({
-        "schema": "rhex://schema/request@1",
+        "schema": "R⬢🌐schema🧬request@1",
         "types": ["*"]
     });
     let record_type = "request";

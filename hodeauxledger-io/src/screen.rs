@@ -11,7 +11,7 @@ pub fn pretty_print_rhex(rhex: &Rhex) {
         "⬅️🧬",
         to_base64(&rhex.intent.previous_hash).green().bold()
     );
-    println!("    {}: {}", "🔭", rhex.intent.scope.green().bold());
+    println!("    {}: {}", "🌐", rhex.intent.scope.green().bold());
     println!("    {}: {}", "🎲", rhex.intent.nonce.green().bold());
     println!(
         "    {}: {}",

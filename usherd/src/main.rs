@@ -54,12 +54,12 @@ async fn accept_loop(listener: TcpListener, verbose: bool) {
     loop {
         match listener.accept().await {
             Ok((stream, addr)) => {
-                println!("🟢 connection from {addr}");
+                println!("🛰️🟢 connection from {addr}");
                 tokio::spawn(async move {
                     if let Err(e) = handle_conn(stream, addr, verbose).await {
                         eprintln!("⚠️ {addr} error: {e}");
                     }
-                    println!("🔴 {addr} closed");
+                    println!("🛰️🔴 {addr} closed");
                 });
             }
             Err(e) => {
@@ -103,6 +103,7 @@ async fn handle_conn(conn: TcpStream, addr: SocketAddr, verbose: bool) -> Result
         //   - maybe emit quorum status / finalization
         // For now, echo the same record as a simple ACK.
         // (We also measure the encoded outbound size the same way.)
+
         let mut out_buf = BytesMut::new();
         codec.encode(rhex_in.clone(), &mut out_buf)?;
         let out_len = out_buf.len();

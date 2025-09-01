@@ -8,3 +8,4 @@ pub fn explode_magic(magic: &[u8; 32]) -> Result<([u8; 4], u8, u8), anyhow::Erro
 pub const MAGIC_MORE: u8 = 1 << 0;
 pub const MAGIC_RESUME: u8 = 1 << 1;
 pub const MAGIC_METADATA: u8 = 1 << 2;
+pub const MAGIC_ENCRYPTION: u8 = 1 << 3;

@@ -128,9 +128,6 @@ pub struct FinalizeArgs {
     pub rhex: String,
 
     #[command(flatten)]
-    pub keys: KeyOpts,
-
-    #[command(flatten)]
     pub save: SaveOpt,
 }
 
@@ -138,14 +135,20 @@ pub struct FinalizeArgs {
 pub struct VerifyArgs {
     /// R⬢ file to verify
     #[arg(short, long, value_name = "FILE")]
-    pub rhex: String,
+    pub input: String,
 }
 
 #[derive(Args, Debug)]
 pub struct GenesisArgs {
     /// 📊 JSON file for genesis metadata (description, etc.)
-    #[arg(long, value_name = "FILE")]
-    pub data_file: String,
+    #[arg(short, long, value_name = "FILE")]
+    pub output: String,
+
+    #[arg(long)]
+    pub scope: String,
+
+    #[arg(short, long)]
+    pub description: Option<String>,
 
     #[command(flatten)]
     pub keys: KeyOpts,

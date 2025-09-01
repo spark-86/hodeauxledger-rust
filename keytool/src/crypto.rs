@@ -1,12 +1,10 @@
+use crate::argv::{GenerateArgs, ViewArgs};
 use crate::crypto;
-use anyhow::anyhow;
 use ed25519_dalek::SigningKey;
 use hodeauxledger_core::crypto::b64::to_base64;
 use hodeauxledger_core::crypto::key::{self, Key};
 use hodeauxledger_io::disk::key as diskkey;
 use std::path::Path;
-
-use crate::Cli;
 
 pub fn save_encrypted_key(
     save_path: &Path,
@@ -31,20 +29,17 @@ pub fn load_encrypted_key(path: &Path, password: &str) -> Result<SigningKey, any
     Ok(sk)
 }
 
-pub fn generate_key(args: Cli) -> Result<(), anyhow::Error> {
+pub fn generate_key(args: GenerateArgs, verbose: bool, quiet: bool) -> Result<(), anyhow::Error> {
     // Set up command line params
-    let password = args
-        .password
-        .as_deref()
-        .ok_or_else(|| anyhow::anyhow!("password must be specified"))?;
-    let save_path = args
-        .save
-        .as_deref()
-        .ok_or_else(|| anyhow::anyhow!("save must be specified"))?;
+    let password = args.password.as_deref();
+    let hot = args.hot;
+    if password.is_none() && !hot {
+        anyhow::bail!("password must be specified when not using --hot");
+    }
+
+    let save_path = args.save;
     let show_private_key = args.show_private_key;
     let hot = args.hot;
-    let quiet = args.quiet;
-    let verbose = args.verbose;
 
     // Generate keypair
     if !quiet {
@@ -65,46 +60,39 @@ pub fn generate_key(args: Cli) -> Result<(), anyhow::Error> {
     }
 
     // Save key
-    if hot {
-        crypto::save_hot_key(Path::new(save_path), &signing_key)?;
+    if hot || password.is_none() {
+        crypto::save_hot_key(Path::new(&save_path), &signing_key)?;
     } else {
-        crypto::save_encrypted_key(Path::new(save_path), password, &signing_key)?;
+        // safe to unwrap because we enforced it above
+        crypto::save_encrypted_key(Path::new(&save_path), password.unwrap(), &signing_key)?;
     }
     Ok(())
 }
 
-pub fn view_key(args: Cli) -> Result<(), anyhow::Error> {
-    let load_path = args
-        .load
-        .as_deref()
-        .ok_or_else(|| anyhow!("load must be specified"))?;
+pub fn view_key(args: ViewArgs, verbose: bool, quiet: bool) -> Result<(), anyhow::Error> {
+    let load_path = args.load;
+    let password_opt = args.password;
     let hot = args.hot;
 
-    // Only require password when not hot
-    let password_opt: Option<&str> = if hot {
-        None
-    } else {
-        Some(
-            args.password
-                .as_deref()
-                .ok_or_else(|| anyhow!("password must be specified"))?,
-        )
-    };
-
+    if !quiet && verbose {
+        println!("Loading key from {}", load_path);
+    }
     // Load the signing key
     let sk: SigningKey = if hot {
-        crypto::load_hot_key(Path::new(load_path))?
+        crypto::load_hot_key(Path::new(&load_path))?
     } else {
         // safe to unwrap because we enforced it above
-        crypto::load_encrypted_key(Path::new(load_path), password_opt.unwrap())?
+        crypto::load_encrypted_key(Path::new(&load_path), &password_opt.unwrap())?
     };
 
     // Print public
     let pk_b = sk.verifying_key().to_bytes(); // [u8; 32]
-    println!("Public key: {}", to_base64(&pk_b));
+    if !quiet {
+        println!("Public key: {}", to_base64(&pk_b));
+    }
 
     // Optionally print private (be careful with logs!)
-    if args.show_private_key {
+    if args.show_private_key && !quiet {
         let sk_bytes = key::signing_key_to_sk64(&sk); // e.g. returns [u8; 32] or [u8; 64]
         println!("Private key: {}", to_base64(&sk_bytes));
     }
