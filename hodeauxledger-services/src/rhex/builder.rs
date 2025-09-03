@@ -7,10 +7,10 @@ use hodeauxledger_core::{Intent, Key, Rhex, Signature};
 /// * `record_type` - R⬢ record type
 /// * `data` - JSON data payload
 pub fn build_rhex(
-    previous_hash: [u8; 32],
+    previous_hash: &[u8; 32],
     scope: &str,
     sk: &Key,
-    usher_pk: [u8; 32],
+    usher_pk: &[u8; 32],
     record_type: &str,
     data: serde_json::Value,
 ) -> Rhex {
@@ -23,16 +23,15 @@ pub fn build_rhex(
         previous_hash,
         scope,
         nonce,
-        author_pk,
+        &author_pk,
         usher_pk,
         record_type,
         data,
     );
-    let signatures = Vec::new();
-    let mut rhex = Rhex::draft(intent, signatures);
+    let mut rhex = Rhex::draft(intent);
 
     // Sign the intent
-    let author_hash = rhex.to_author_hash().unwrap();
+    let author_hash = rhex.compute_content_hash().unwrap();
     let signature = key.sign(&author_hash).unwrap();
 
     // Push sig on stack
@@ -50,7 +49,13 @@ pub fn usher_sign(rhex: &Rhex, at: u64, sk: [u8; 32]) -> Rhex {
     rhex.context.at = at;
     let key = Key::from_bytes(&sk);
     let usher_pk = key.to_bytes();
-    let msg = rhex.to_usher_hash().unwrap();
+    let author_sig = rhex.signatures.iter().find(|s| s.sig_type == 0).unwrap();
+    let msg = rhex.usher_prehash(&author_sig.sig);
+    if msg.is_err() {
+        return rhex;
+    }
+    let msg = msg.unwrap();
+    //let msg = rhex.to_usher_hash().unwrap();
     let signature = key.sign(&msg).unwrap();
     let usher_sig = Signature {
         sig_type: 1,
@@ -65,8 +70,10 @@ pub fn quorum_sign(rhex: &Rhex, sk: [u8; 32]) -> Rhex {
     let mut rhex = rhex.clone();
     let key = Key::from_bytes(&sk);
     let quorum_pk = key.to_bytes();
-    let msg = rhex.to_quorum_hash().unwrap();
-    let signature = key.sign(&msg).unwrap();
+    let author_sig = rhex.signatures.iter().find(|s| s.sig_type == 0).unwrap();
+    let usher_sig = rhex.signatures.iter().find(|s| s.sig_type == 1);
+    let msg = rhex.quorum_prehash(&author_sig.sig, Some(&usher_sig.unwrap().sig));
+    let signature = key.sign(&msg.unwrap()).unwrap();
     let quorum_sig = Signature {
         sig_type: 2,
         public_key: quorum_pk,

@@ -38,16 +38,16 @@ pub fn craft_intent(args: &CraftArgs) -> anyhow::Result<(), anyhow::Error> {
     let author_pk = from_base64_to_32(&author_pk_b64)?;
     let usher_pk = from_base64_to_32(&usher_pk_b64)?;
     let intent = Intent::new(
-        ph_bytes,
+        &ph_bytes,
         &scope,
         &nonce,
-        author_pk,
-        usher_pk,
+        &author_pk,
+        &usher_pk,
         &record_type,
         data,
     );
 
-    let rhex = Rhex::draft(intent, Vec::new());
+    let rhex = Rhex::draft(intent);
 
     // output rhex intent
     diskrhex::save_rhex(&Path::new(save_path).to_path_buf(), &rhex)?;

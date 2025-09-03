@@ -13,12 +13,14 @@ pub fn retrieve_authorities(
         let name: String = row.get("name")?;
         let host: String = row.get("host")?;
         let port: u16 = row.get("port")?;
+        let proto: String = row.get("proto")?;
         let public_key = row.get("public_key")?;
         let priority: u8 = row.get("priority")?;
         let authority = Authority {
             name,
             host,
             port,
+            proto,
             public_key,
             priority,
         };
@@ -34,7 +36,7 @@ pub fn cache_authorities(
     authorities: &[Authority],
 ) -> Result<(), anyhow::Error> {
     let mut stmt = conn.prepare(
-        "INSERT INTO authorities (scope, name, host, port, public_key, priority) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+        "INSERT INTO authorities (scope, name, host, port, proto, public_key, priority) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
     )?;
     for authority in authorities {
         stmt.execute(params![
@@ -42,6 +44,7 @@ pub fn cache_authorities(
             authority.name,
             authority.host,
             authority.port,
+            authority.proto,
             authority.public_key,
             authority.priority
         ])?;
@@ -68,6 +71,7 @@ pub fn build_table(conn: &Connection) -> Result<(), anyhow::Error> {
             name TEXT,
             host TEXT,
             port INTEGER,
+            proto TEXT,
             public_key BLOB,
             priority INTEGER,
             PRIMARY KEY (scope, public_key)

@@ -12,6 +12,6 @@ pub fn verifiy_failed(
         "failed_rhex": rhex,
         "error": err.to_string(),
     });
-    let rhex = builder::build_rhex([0u8; 32], "", our_key, [0u8; 32], record_type, data);
+    let rhex = builder::build_rhex(&[0u8; 32], "", our_key, &[0u8; 32], record_type, data);
     Ok(rhex)
 }

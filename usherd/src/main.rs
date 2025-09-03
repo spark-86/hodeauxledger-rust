@@ -3,6 +3,7 @@ use bytes::BytesMut;
 use clap::Parser;
 use futures::{SinkExt, StreamExt};
 use hodeauxledger_core::{Key, Rhex};
+use hodeauxledger_io::cache::build::build_cache_db;
 use hodeauxledger_io::disk::key as diskkey;
 use hodeauxledger_proto::codec::RhexCodec;
 use std::time::Instant;
@@ -10,6 +11,9 @@ use std::{net::SocketAddr, path::Path};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_util::codec::{Encoder, Framed};
 
+use crate::argv::Command;
+
+mod argv;
 mod bootstrap;
 mod processor;
 
@@ -138,22 +142,24 @@ async fn handle_conn(conn: TcpStream, addr: SocketAddr, verbose: bool) -> Result
     Ok(())
 }
 
-async fn setup_listener(args: &Cli) -> anyhow::Result<TcpListener> {
-    let host = args.host.as_deref().unwrap_or("0.0.0.0");
-    let port = args.port.as_deref().unwrap_or("1984");
-    if args.verbose {
-        println!("host: {host}");
-        println!("port: {port}");
-    }
+async fn setup_listener(host: &str, port: &str) -> anyhow::Result<TcpListener> {
     let addr = format!("{host}:{port}");
     Ok(TcpListener::bind(addr).await?)
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let args = Cli::parse();
+    let args = argv::Cli::parse();
+    let action = args.cmd;
 
-    let listener = setup_listener(&args).await?;
+    match action {
+        Command::Listen(listen_args) => listen(&listen_args).await?,
+        Command::Rebuild(rebuild_args) => rebuild(&rebuild_args).await?,
+    }
+
+    //bootstrap::bootstrap(args.verbose)?;
+
+    let listener = setup_listener("0.0.0.0", "1984").await?;
     println!("listening on {}", listener.local_addr()?);
 
     let verbose = args.verbose;
@@ -170,5 +176,20 @@ async fn main() -> anyhow::Result<()> {
     }
 
     println!("bye!");
+    Ok(())
+}
+
+async fn listen(args: &argv::ListenArgs) -> anyhow::Result<()> {
+    Ok(())
+}
+
+async fn rebuild(args: &argv::RebuildArgs) -> anyhow::Result<()> {
+    let path = &args.db_path;
+    let path = if path.is_none() {
+        path.clone().unwrap().to_string()
+    } else {
+        "./data/cache.sqlite".to_string()
+    };
+    build_cache_db(&path);
     Ok(())
 }

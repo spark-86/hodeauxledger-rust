@@ -1,4 +1,4 @@
-use hodeauxledger_core::crypto::key::Key;
+use hodeauxledger_core::key::key::Key;
 use hodeauxledger_core::rhex::intent::Intent;
 use hodeauxledger_core::rhex::rhex::Rhex;
 use hodeauxledger_core::rhex::signature::Signature;
@@ -59,23 +59,23 @@ fn build_request_rhex(usher_pk: [u8; 32], key: &[u8; 32]) -> Rhex {
     let author_key = Key::from_bytes(key);
     let author_pk = author_key.to_bytes();
     let data = serde_json::json!({
-        "schema": "R⬢🌐schema🧬request@1",
+        "schema": "rhex://schema/request_rhex@0",
         "types": ["*"]
     });
     let record_type = "request";
     let scope = "";
     let previous_hash = [0u8; 32];
     let intent = Intent::new(
-        previous_hash,
+        &previous_hash,
         scope,
         nonce.as_str(),
-        author_pk,
-        usher_pk,
+        &author_pk,
+        &usher_pk,
         record_type,
         data,
     );
-    let mut rhex = Rhex::draft(intent, Vec::new());
-    let intent_hash = rhex.to_author_hash().unwrap();
+    let mut rhex = Rhex::draft(intent);
+    let intent_hash = rhex.author_prehash().unwrap();
     let dalek_sig = author_key.sign(&intent_hash).unwrap();
     let sig = Signature {
         sig_type: 0,

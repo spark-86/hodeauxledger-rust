@@ -41,6 +41,7 @@ impl Policy {
                 roles: vec!["👑".to_string()],
                 quorum_k: 1,
                 rate_per_mark: 80,
+                quorum_roles: vec!["👑".to_string()],
             }),
             rules,
             quorum_ttl: Some(1_000_000), // 1 Mark

@@ -6,23 +6,32 @@ pub struct Authority {
     pub name: String,
     pub host: String,
     pub port: u16,
+    pub proto: String,
     pub public_key: [u8; 32],
     pub priority: u8, // 0..100 (lower = higher)
 }
 
 impl Authority {
-    pub fn new(name: String, host: String, port: u16, public_key: [u8; 32], priority: u8) -> Self {
+    pub fn new(
+        name: String,
+        host: String,
+        port: u16,
+        proto: String,
+        public_key: [u8; 32],
+        priority: u8,
+    ) -> Self {
         Self {
             name,
             host,
             port,
+            proto,
             public_key,
             priority,
         }
     }
 
     pub fn to_string(&self) -> String {
-        format!("{}@{}:{}", self.name, self.host, self.port)
+        format!("{}://{}@{}:{}", self.proto, self.name, self.host, self.port)
     }
 
     pub fn to_vec(&self) -> Vec<Authority> {

@@ -108,7 +108,11 @@ fn finalize_rhex(args: &FinalizeArgs) -> anyhow::Result<(), anyhow::Error> {
 fn verify_current_hash(args: &VerifyArgs) -> anyhow::Result<(), anyhow::Error> {
     let rhex_path = &args.input;
     let rhex = diskrhex::load_rhex(&Path::new(rhex_path).to_path_buf())?;
-    rhex.verify_hash()?;
+    let validated = rhex.validate();
+    if let Err(e) = validated {
+        println!("❌ R⬢ hash verification failed: {}", e);
+        return Ok(());
+    }
     println!("✅ R⬢ hash verified.");
     Ok(())
 }

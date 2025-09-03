@@ -1,3 +1,5 @@
+use crate::cache::key;
+use hodeauxledger_core::Key;
 use rusqlite::{Connection, params};
 
 #[derive(Debug)]
@@ -16,19 +18,8 @@ impl Cache {
         Ok(Self { conn })
     }
 
-    pub fn cache_key(
-        &self,
-        key: &[u8; 32],
-        roles: &[&str],
-        scope: &str,
-        expiry: &u64,
-    ) -> anyhow::Result<()> {
-        let role_list = roles.join(",");
-        let mut stmt = self
-            .conn
-            .prepare("INSERT INTO keys (key, roles, scope, expiry) VALUES (?1, ?2, ?3, ?4)")?;
-        stmt.execute(params![key, role_list, scope, expiry])?;
-        Ok(())
+    pub fn cache_key(&self, key: &Key, scope: &str) -> anyhow::Result<()> {
+        key::cache_key(&self.conn, scope, key)
     }
 
     pub fn evict_key(&self, key: &[u8; 32], scope: &str) -> anyhow::Result<()> {

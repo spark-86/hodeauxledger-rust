@@ -23,20 +23,20 @@ pub struct Intent {
 impl Intent {
     /// Builder for a fresh intent (fills nonce and µmark time).
     pub fn new(
-        previous_hash: [u8; 32],
+        previous_hash: &[u8; 32],
         scope: &str,
         nonce: &str,
-        author_pk: [u8; 32],
-        usher_pk: [u8; 32],
+        author_pk: &[u8; 32],
+        usher_pk: &[u8; 32],
         record_type: &str,
         data: serde_json::Value,
     ) -> Self {
         Self {
-            previous_hash,
+            previous_hash: *previous_hash,
             scope: scope.to_string(),
             nonce: nonce.to_string(),
-            author_public_key: author_pk,
-            usher_public_key: usher_pk,
+            author_public_key: *author_pk,
+            usher_public_key: *usher_pk,
             record_type: record_type.to_string(),
             data,
         }

@@ -66,7 +66,7 @@ pub fn scope_from_disk_to_cache(scope_name: &str) -> Result<(), anyhow::Error> {
     if scope.is_none() {
         return Err(anyhow::anyhow!("scope not found"));
     }
-    diskscope::load_scope("./data/ledger", scope_name, diskscope::ScopeSink::Db)?;
+    diskscope::load_scope("./data/ledger", scope_name, diskscope::ScopeSink::Db, true)?;
 
     Ok(())
 }

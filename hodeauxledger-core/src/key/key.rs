@@ -5,13 +5,22 @@ use getrandom;
 use crate::to_base64;
 
 pub struct Key {
+    pub roles: Option<Vec<String>>,
     pub sk: Option<SigningKey>,
     pub pk: Option<VerifyingKey>,
+    pub effective_micromark: Option<u64>,
+    pub expires_micromark: Option<u64>,
 }
 
 impl Key {
     pub fn new() -> Self {
-        Self { sk: None, pk: None }
+        Self {
+            roles: None,
+            sk: None,
+            pk: None,
+            effective_micromark: None,
+            expires_micromark: None,
+        }
     }
 
     pub fn generate() -> Self {
@@ -20,8 +29,11 @@ impl Key {
         let sk = SigningKey::from_bytes(&seed);
         let pk = sk.verifying_key();
         Self {
+            roles: None,
             sk: Some(sk),
             pk: Some(pk),
+            effective_micromark: None,
+            expires_micromark: None,
         }
     }
 
@@ -59,8 +71,11 @@ impl Key {
         let sk = SigningKey::from_bytes(bytes);
         let pk = sk.verifying_key();
         Self {
+            roles: None,
             sk: Some(sk),
             pk: Some(pk),
+            effective_micromark: None,
+            expires_micromark: None,
         }
     }
 

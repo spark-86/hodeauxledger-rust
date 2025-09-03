@@ -11,6 +11,6 @@ pub fn set(
 ) -> Result<Rhex, anyhow::Error> {
     let record_type = "policy:set";
     let data = policy.to_json();
-    let rhex = builder::build_rhex(*head, scope, &author_key, *usher_pk, record_type, data);
+    let rhex = builder::build_rhex(head, scope, &author_key, usher_pk, record_type, data);
     Ok(rhex)
 }

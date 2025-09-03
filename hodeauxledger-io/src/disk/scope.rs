@@ -12,7 +12,12 @@ pub enum ScopeSink {
     Db,
 }
 
-pub fn load_scope(ledger_path: &str, scope: &str, sink: ScopeSink) -> Result<Vec<Rhex>> {
+pub fn load_scope(
+    ledger_path: &str,
+    scope: &str,
+    sink: ScopeSink,
+    process_rhex: bool,
+) -> Result<Vec<Rhex>> {
     let dir = format!("{}/{}", ledger_path, scope);
 
     let base = Path::new(&dir);
@@ -40,7 +45,7 @@ pub fn load_scope(ledger_path: &str, scope: &str, sink: ScopeSink) -> Result<Vec
             cache_rhex(&cache.conn, &curr)?;
         }
     }
-
+    if process_rhex {}
     loop {
         // Try to find the next file in the chain
         let new_file = base.join(format!("{}.rhex", to_hex(&working_hash)));

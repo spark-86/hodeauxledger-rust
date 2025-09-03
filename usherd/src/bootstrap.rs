@@ -32,6 +32,7 @@ pub fn bootstrap(verbose: bool) -> anyhow::Result<()> {
     let scope_list = get_scope_list("./ledger/")?;
 
     // Verify that our status is current in the list of scopes
-    for scope in scope_list {}
+    let _ = scope_list;
+
     Ok(())
 }

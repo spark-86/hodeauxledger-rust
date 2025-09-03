@@ -2,7 +2,7 @@ use crate::argv::{EncryptArgs, GenerateArgs, HotArgs, ViewArgs};
 use crate::crypto;
 use ed25519_dalek::SigningKey;
 use hodeauxledger_core::crypto::b64::to_base64;
-use hodeauxledger_core::crypto::key::{self, Key};
+use hodeauxledger_core::key::key::{self, Key};
 use hodeauxledger_io::disk::key as diskkey;
 use std::path::Path;
 

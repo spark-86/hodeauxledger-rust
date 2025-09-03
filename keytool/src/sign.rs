@@ -20,11 +20,17 @@ pub fn sign_rhex(
     // enforce signing order / prerequisites
     check_for_sigs(&rhex, sig_type)?;
 
+    // Figure our hash targets
+    let author_sig = rhex.signatures.iter().find(|s| s.sig_type == 0);
+    let usher_sig = rhex.signatures.iter().find(|s| s.sig_type == 1);
+
     // pick the correct hash to sign
     let hash = match sig_type {
-        SigType::Author => rhex.to_author_hash()?,
-        SigType::Usher => rhex.to_usher_hash()?,
-        SigType::Quorum => rhex.to_quorum_hash()?,
+        SigType::Author => rhex.author_prehash()?,
+        SigType::Usher => rhex.usher_prehash(&author_sig.unwrap().sig)?,
+        SigType::Quorum => {
+            rhex.quorum_prehash(&author_sig.unwrap().sig, Some(&usher_sig.unwrap().sig))?
+        }
     };
 
     // sign
@@ -83,9 +89,30 @@ pub fn verify_rhex(rhex: &Rhex, verbose: bool, quiet: bool) -> Result<bool> {
         }
         let sigrec_type = st.unwrap();
         let msg = match sigrec_type {
-            SigType::Author => rhex.to_author_hash()?,
-            SigType::Usher => rhex.to_usher_hash()?,
-            SigType::Quorum => rhex.to_quorum_hash()?,
+            SigType::Author => rhex.author_prehash()?,
+            SigType::Usher => {
+                let author_sig = rhex
+                    .signatures
+                    .iter()
+                    .find(|s| s.sig_type == 0)
+                    .ok_or_else(|| anyhow::anyhow!("missing author signature"))?;
+
+                rhex.usher_prehash(&author_sig.sig)?
+            }
+            SigType::Quorum => {
+                let author_sig = rhex
+                    .signatures
+                    .iter()
+                    .find(|s| s.sig_type == 0)
+                    .ok_or_else(|| anyhow::anyhow!("missing usher signature"))?;
+                let usher_sig = rhex
+                    .signatures
+                    .iter()
+                    .find(|s| s.sig_type == 1)
+                    .ok_or_else(|| anyhow::anyhow!("missing quorum signature"))?;
+
+                rhex.quorum_prehash(&author_sig.sig, Some(&usher_sig.sig))?
+            }
         };
         if !sig_key.verify(&msg, &sig) {
             if verbose && !quiet {
@@ -97,9 +124,30 @@ pub fn verify_rhex(rhex: &Rhex, verbose: bool, quiet: bool) -> Result<bool> {
             return Ok(false);
         }
         let hash = match sigrec_type {
-            SigType::Author => rhex.to_author_hash()?,
-            SigType::Usher => rhex.to_usher_hash()?,
-            SigType::Quorum => rhex.to_quorum_hash()?,
+            SigType::Author => rhex.author_prehash()?,
+            SigType::Usher => {
+                let author_sig = rhex
+                    .signatures
+                    .iter()
+                    .find(|s| s.sig_type == 0)
+                    .ok_or_else(|| anyhow::anyhow!("missing author signature"))?;
+
+                rhex.usher_prehash(&author_sig.sig)?
+            }
+            SigType::Quorum => {
+                let author_sig = rhex
+                    .signatures
+                    .iter()
+                    .find(|s| s.sig_type == 0)
+                    .ok_or_else(|| anyhow::anyhow!("missing author signature"))?;
+                let usher_sig = rhex
+                    .signatures
+                    .iter()
+                    .find(|s| s.sig_type == 1)
+                    .ok_or_else(|| anyhow::anyhow!("missing usher signature"))?;
+
+                rhex.quorum_prehash(&author_sig.sig, Some(&usher_sig.sig))?
+            }
         };
         if verbose && !quiet {
             println!(

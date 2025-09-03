@@ -8,7 +8,7 @@ pub fn ok(
     data: serde_json::Value,
 ) -> Result<Rhex, anyhow::Error> {
     let record_type = "confirm:ok";
-    let rhex = builder::build_rhex([0u8; 32], "", &our_key, *senders_pk, record_type, data);
+    let rhex = builder::build_rhex(&[0u8; 32], "", &our_key, senders_pk, record_type, data);
     let clock = GTClock::new(0);
     let rhex = builder::usher_sign(&rhex, clock.now_micromarks_u64(), *senders_pk);
     Ok(rhex)

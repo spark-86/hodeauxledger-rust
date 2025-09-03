@@ -1,5 +1,5 @@
 use hodeauxledger_core::{Key, Rhex};
-use hodeauxledger_services::build::error;
+use hodeauxledger_services::{build::error, rhex};
 
 pub fn process_rhex(rhex: &Rhex, hot_key: &Key, verbose: bool) -> Result<Vec<Rhex>, anyhow::Error> {
     // First we verify the R⬢
@@ -20,8 +20,10 @@ pub fn process_rhex(rhex: &Rhex, hot_key: &Key, verbose: bool) -> Result<Vec<Rhe
 
     // Can we submit this type of R⬢?
 
-    // Does this need to be forwarded?
-
     // Does this match schema?
-    Ok(Vec::new())
+
+    // All the checks are clear, chocks are loose and boosters are
+    // a go.
+    let returned_rhex = rhex::process::process_rhex(rhex, true);
+    Ok(returned_rhex)
 }
