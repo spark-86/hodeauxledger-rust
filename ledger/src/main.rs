@@ -14,6 +14,7 @@ use clap::Parser;
 mod argv;
 mod craft;
 mod genesis;
+mod view;
 
 //const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -131,6 +132,7 @@ fn main() -> anyhow::Result<()> {
         Command::Finalize(args) => finalize_rhex(&args)?,
         Command::Verify(args) => verify_current_hash(&args)?,
         Command::Genesis(args) => genesis::create_genesis(&args)?,
-    };
+        Command::View(view_args) => view::view(&view_args)?,
+    }
     Ok(())
 }

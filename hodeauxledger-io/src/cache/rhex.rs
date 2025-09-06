@@ -3,10 +3,12 @@ use rusqlite::{Connection, params};
 use serde_json::Value;
 use std::convert::TryInto;
 
+use crate::screen::pretty_print_rhex;
+
 pub fn cache_rhex(conn: &Connection, rhex: &Rhex) -> anyhow::Result<()> {
     let sig_string = serde_json::to_string(&rhex.signatures)?;
     let data_string = serde_json::to_string(&rhex.intent.data)?;
-
+    let current_hash = rhex.current_hash.unwrap();
     let mut stmt = conn.prepare("INSERT INTO rhex (previous_hash, scope, nonce, at, author_public_key, usher_public_key, record_type, data, signatures, current_hash) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)")?;
     stmt.execute(params![
         rhex.intent.previous_hash,
@@ -18,9 +20,52 @@ pub fn cache_rhex(conn: &Connection, rhex: &Rhex) -> anyhow::Result<()> {
         rhex.intent.record_type,
         data_string,
         sig_string,
-        rhex.current_hash
+        current_hash
     ])?;
     Ok(())
+}
+
+pub fn retrieve_scope_rhex(conn: &Connection, scope: &str) -> anyhow::Result<Vec<Rhex>> {
+    let mut stmt = conn.prepare(
+        "SELECT previous_hash, scope, nonce, at,
+                author_public_key, usher_public_key,
+                record_type, data, signatures, current_hash
+         FROM rhex
+         WHERE scope = ?1",
+    )?;
+    let mut rows = stmt.query(params![scope])?;
+    let mut out_rhex = Vec::new();
+    while let Some(row) = rows.next()? {
+        // Simple string/primitive gets
+        let ph: Vec<u8> = row.get("previous_hash")?;
+        let scope: String = row.get("scope")?;
+        let nonce: String = row.get("nonce")?;
+        let at: i64 = row.get("at")?;
+        let author_pk: Vec<u8> = row.get("author_public_key")?;
+        let usher_pk: Vec<u8> = row.get("usher_public_key")?;
+        let record_type: String = row.get("record_type")?;
+        let data_str: String = row.get("data")?;
+        let sig_str: String = row.get("signatures")?;
+        let curr: Vec<u8> = row.get("current_hash")?;
+        out_rhex.push(Rhex {
+            magic: *b"RHEX\x00\x00",
+            intent: hodeauxledger_core::rhex::intent::Intent {
+                previous_hash: ph
+                    .try_into()
+                    .map_err(|_| anyhow::anyhow!("previous_hash not 32 bytes"))?,
+                scope,
+                nonce,
+                author_public_key: author_pk.as_slice().try_into().unwrap(),
+                usher_public_key: usher_pk.as_slice().try_into().unwrap(),
+                record_type,
+                data: serde_json::from_str(&data_str)?,
+            },
+            context: hodeauxledger_core::rhex::context::Context { at: at as u64 },
+            signatures: serde_json::from_str(&sig_str)?,
+            current_hash: Some(curr.to_vec().try_into().unwrap()),
+        });
+    }
+    Ok(out_rhex)
 }
 
 pub fn retrieve_rhex(conn: &Connection, current_hash: &[u8; 32]) -> anyhow::Result<Rhex> {

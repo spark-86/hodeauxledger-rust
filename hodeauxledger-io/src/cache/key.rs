@@ -15,10 +15,10 @@ pub fn cache_key(conn: &Connection, scope: &str, key: &Key) -> anyhow::Result<()
 
 pub fn build_table(conn: &Connection) -> anyhow::Result<()> {
     conn.execute(
-        "CREATE TABLE IF NOT EXISTS keys (
+        "CREATE TABLE IF NOT EXISTS public_keys (
             scope TEXT,
             roles TEXT,
-            pk BLOB,
+            public_key BLOB,
             effective_micromark INTEGER,
             expires_micromark INTEGER,
             PRIMARY KEY (scope, public_key)

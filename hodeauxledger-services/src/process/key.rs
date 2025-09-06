@@ -15,7 +15,7 @@ pub fn process_key_records(rhex: &Rhex, first_time: bool) -> Result<(), anyhow::
 }
 
 pub fn grant(rhex: &Rhex, _first_time: bool) -> Result<()> {
-    let cache = Cache::connect("./data/cache.sqlite")?;
+    let cache = Cache::connect("")?;
     let scope = &rhex.intent.scope;
 
     // roles: Option<Vec<String>>
@@ -79,6 +79,9 @@ pub fn grant(rhex: &Rhex, _first_time: bool) -> Result<()> {
     Ok(())
 }
 pub fn revoke(rhex: &Rhex, first_time: bool) -> Result<(), anyhow::Error> {
-    let cache = Cache::connect("./data/cache.sqlite")?;
+    let cache = Cache::connect("")?;
+    let _ = rhex;
+    let _ = first_time;
+    let _ = cache;
     Ok(())
 }

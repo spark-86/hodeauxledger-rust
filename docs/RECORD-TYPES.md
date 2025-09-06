@@ -37,6 +37,7 @@
 -   📦:🔗 = record:link - Stores a link node in the chain
 -   📦:📦 = record:package - Header for a chain of records that compile into a package
 -   📦:🧩 = record:piece - Chain member for a package
+-   📦:🚫 = record:ban - Bans a record from being returned in the scope
 
 ## Request (📩)
 

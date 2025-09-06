@@ -30,7 +30,7 @@ pub fn retrieve_authorities(
     Ok(Vec::new())
 }
 
-pub fn cache_authorities(
+pub fn cache_authority(
     conn: &Connection,
     scope: &str,
     authorities: &[Authority],

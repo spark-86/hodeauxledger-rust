@@ -31,15 +31,14 @@ pub fn load_encrypted_key(path: &Path, password: &str) -> Result<SigningKey, any
 
 pub fn generate_key(args: GenerateArgs, verbose: bool, quiet: bool) -> Result<(), anyhow::Error> {
     // Set up command line params
-    let password = args.password.as_deref();
-    let hot = args.hot;
+    let password = args.keys.password.as_deref();
+    let hot = args.keys.hot;
     if password.is_none() && !hot {
         anyhow::bail!("password must be specified when not using --hot");
     }
 
-    let save_path = args.save;
+    let save_path = args.keys.keyfile;
     let show_private_key = args.show_private_key;
-    let hot = args.hot;
 
     // Generate keypair
     if !quiet {

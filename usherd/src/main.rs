@@ -113,8 +113,13 @@ async fn handle_conn(conn: TcpStream, addr: SocketAddr, verbose: bool) -> Result
         //   - maybe emit quorum status / finalization
         // For now, echo the same record as a simple ACK.
         // (We also measure the encoded outbound size the same way.)
+        if verbose {
+            println!("🧩 Processing record...");
+        }
         let out_rhex = processor::process_rhex(&rhex_in, &hot_key, verbose)?;
-
+        if verbose {
+            println!("🧩 Processed record");
+        }
         for rhex in out_rhex {
             let mut out_buf = BytesMut::new();
             codec.encode(rhex.clone(), &mut out_buf)?;
@@ -153,16 +158,18 @@ async fn main() -> anyhow::Result<()> {
     let action = args.cmd;
 
     match action {
-        Command::Listen(listen_args) => listen(&listen_args).await?,
+        Command::Listen(listen_args) => listen(&listen_args, args.verbose).await?,
         Command::Rebuild(rebuild_args) => rebuild(&rebuild_args).await?,
     }
 
-    //bootstrap::bootstrap(args.verbose)?;
+    Ok(())
+}
 
+async fn listen(args: &argv::ListenArgs, verbose: bool) -> anyhow::Result<()> {
+    bootstrap::bootstrap(verbose)?;
+    let _ = args;
     let listener = setup_listener("0.0.0.0", "1984").await?;
     println!("listening on {}", listener.local_addr()?);
-
-    let verbose = args.verbose;
 
     // task that waits for Ctrl+C to trigger shutdown
     let shutdown = tokio::spawn(async {
@@ -179,17 +186,13 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn listen(args: &argv::ListenArgs) -> anyhow::Result<()> {
-    Ok(())
-}
-
 async fn rebuild(args: &argv::RebuildArgs) -> anyhow::Result<()> {
     let path = &args.db_path;
-    let path = if path.is_none() {
+    let path = if path.is_some() {
         path.clone().unwrap().to_string()
     } else {
         "./data/cache.sqlite".to_string()
     };
-    build_cache_db(&path);
+    build_cache_db(&path)?;
     Ok(())
 }

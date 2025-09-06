@@ -3,5 +3,7 @@ pub mod authorities;
 pub mod build;
 pub mod cache;
 pub mod key;
+pub mod policies;
 pub mod rhex;
+pub mod rules;
 pub mod scopes;

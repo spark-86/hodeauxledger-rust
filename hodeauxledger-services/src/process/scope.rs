@@ -1,5 +1,12 @@
 use anyhow::Ok;
-use hodeauxledger_core::{Key, Rhex, to_base64};
+use ed25519_dalek::VerifyingKey;
+use hodeauxledger_core::{
+    GTClock, Key, Rhex,
+    policy::{policy::Policy, rule::Rule},
+    scope::authority::Authority,
+    to_base64,
+};
+use hodeauxledger_io::{Cache, cache};
 
 use crate::rhex::builder;
 
@@ -9,6 +16,50 @@ pub fn genesis(rhex: &Rhex, first_time: bool) -> Result<Vec<Rhex>, anyhow::Error
     if first_time {
         println!("🌐💡 occurred for 🌐:{}", rhex.intent.scope);
     }
+    let cache = Cache::connect("")?;
+    let clock = GTClock::new(1756876283931);
+    cache::scopes::cache_scope(
+        &cache.conn,
+        &rhex.intent.scope,
+        "cache",
+        &clock.now_micromarks_u64(),
+        &[0u8; 32],
+    )?;
+    cache::authorities::cache_authority(
+        &cache.conn,
+        &rhex.intent.scope,
+        &vec![Authority {
+            name: "genesis".to_string(),
+            host: "".to_string(),
+            port: 0,
+            proto: "rhex".to_string(),
+            public_key: rhex.intent.author_public_key,
+            priority: 0,
+        }],
+    )?;
+    let mut key = Key::new();
+    key.set_pub_key(VerifyingKey::from_bytes(&rhex.intent.author_public_key)?);
+    cache::key::cache_key(&cache.conn, &rhex.intent.scope, &key)?;
+    cache::policies::cache_policy(
+        &cache.conn,
+        &rhex.intent.scope,
+        &Policy {
+            note: None,
+            defaults: None,
+            quorum_ttl: None,
+            effective_micromark: None,
+            expiration_micromark: None,
+            scope: rhex.intent.scope.clone(),
+            rules: vec![Rule {
+                record_type: "policy:set".to_string(),
+                rate_per_mark: 80,
+                append_roles: vec!["👑".to_string()],
+                quorum_k: 1,
+                quorum_roles: vec!["👑".to_string()],
+            }],
+        },
+        &rhex.current_hash.unwrap(),
+    )?;
     Ok(Vec::new())
 }
 

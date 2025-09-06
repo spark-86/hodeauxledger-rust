@@ -39,29 +39,34 @@ pub enum Command {
 }
 
 #[derive(Args, Debug)]
-pub struct SignArgs {
-    /// 🔑 file to load
+pub struct KeyOpts {
+    /// 🔑 key file to load
     #[arg(short, long)]
-    pub load: String,
+    pub keyfile: String,
 
-    /// 🔑 password to decrypt keyfile
     #[arg(short, long)]
     pub password: Option<String>,
 
     /// Is the key hot?
     #[arg(long)]
     pub hot: bool,
+}
+
+#[derive(Args, Debug)]
+pub struct SignArgs {
+    #[command(flatten)]
+    pub keys: KeyOpts,
 
     /// R⬢ to sign
-    #[arg(long)]
-    pub rhex_input: String,
+    #[arg(short, long)]
+    pub input: String,
 
     /// R⬢ to ouput
-    #[arg(long)]
-    pub rhex_output: String,
+    #[arg(short, long)]
+    pub output: String,
 
     #[arg(long)]
-    pub signature_type: Option<String>,
+    pub signature_type: String,
 }
 
 #[derive(Args, Debug)]
@@ -73,18 +78,12 @@ pub struct VerifyArgs {
 
 #[derive(Args, Debug)]
 pub struct GenerateArgs {
-    /// 🔑 file to save
-    #[arg(short, long)]
-    pub save: String,
-
-    #[arg(short, long)]
-    pub password: Option<String>,
+    /// 🔑 shit
+    #[command(flatten)]
+    pub keys: KeyOpts,
 
     #[arg(long)]
     pub show_private_key: bool,
-
-    #[arg(long)]
-    pub hot: bool,
 }
 
 #[derive(Args, Debug)]

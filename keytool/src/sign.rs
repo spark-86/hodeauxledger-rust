@@ -1,9 +1,9 @@
 use std::path::Path;
 
-use anyhow::{Context, Ok, Result, bail, ensure};
+use anyhow::{Context, Ok, Result, ensure};
 use ed25519_dalek::{Signature as DalekSig, SigningKey, VerifyingKey};
 use hodeauxledger_core::rhex::signature::SigType;
-use hodeauxledger_core::{Key, to_base64};
+use hodeauxledger_core::{GTClock, Key, to_base64};
 use hodeauxledger_core::{Rhex, Signature};
 use hodeauxledger_io::disk::rhex as diskrhex;
 use owo_colors::OwoColorize;
@@ -27,7 +27,11 @@ pub fn sign_rhex(
     // pick the correct hash to sign
     let hash = match sig_type {
         SigType::Author => rhex.author_prehash()?,
-        SigType::Usher => rhex.usher_prehash(&author_sig.unwrap().sig)?,
+        SigType::Usher => {
+            let clock = GTClock::new(1756876283931);
+            rhex.context.at = clock.now_micromarks_u64();
+            rhex.usher_prehash(&author_sig.unwrap().sig)?
+        }
         SigType::Quorum => {
             rhex.quorum_prehash(&author_sig.unwrap().sig, Some(&usher_sig.unwrap().sig))?
         }
@@ -36,6 +40,17 @@ pub fn sign_rhex(
     // sign
     let sign_key = Key::from_bytes(&sk.to_bytes());
     let sig = sign_key.sign(hash.as_ref())?;
+
+    // prevent duplicate quorum sigs from same key
+    if sig_type == SigType::Quorum {
+        if rhex
+            .signatures
+            .iter()
+            .any(|s| s.sig_type == SigType::Quorum as u8 && s.public_key == sign_key.to_bytes())
+        {
+            anyhow::bail!("This key has already signed as quorum");
+        }
+    }
 
     // append signature
     rhex.signatures.push(Signature {
@@ -167,25 +182,20 @@ pub fn verify_rhex(rhex: &Rhex, verbose: bool, quiet: bool) -> Result<bool> {
 
 pub fn sign(args: SignArgs, verbose: bool, quiet: bool) -> Result<(), anyhow::Error> {
     // Parse command line args
-    let load = args.load;
-    let password_opt = args.password;
-    let hot = args.hot;
+    let load = args.keys.keyfile;
+    let password_opt = args.keys.password;
+    let hot = args.keys.hot;
     if !hot && password_opt.is_none() {
         anyhow::bail!("password must be specified when not using --hot");
     }
     let password = password_opt.unwrap_or("".to_string());
-    let rhex_input = args.rhex_input;
-    let rhex_output = args.rhex_output;
-    let signature_type = match args.signature_type.as_deref() {
-        Some("author") | Some("0") => SigType::Author,
-        Some("usher") | Some("1") => SigType::Usher,
-        Some("quorum") | Some("2") => SigType::Quorum,
-        Some(&_) => {
-            bail!("signature_type must be one of: author, usher, quorum");
-        }
-        None => {
-            bail!("signature_type must be specified");
-        }
+    let rhex_input = args.input;
+    let rhex_output = args.output;
+    let signature_type = match args.signature_type.to_ascii_lowercase().as_str() {
+        "author" | "0" => SigType::Author,
+        "usher" | "1" => SigType::Usher,
+        "quorum" | "2" => SigType::Quorum,
+        _ => anyhow::bail!("invalid signature type"),
     };
 
     // Load the key to sign with

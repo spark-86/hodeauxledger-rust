@@ -7,6 +7,9 @@ pub struct Cli {
     #[arg(short, long, global = true)]
     pub verbose: bool,
 
+    /// Path to data
+    pub ledger_path: Option<String>,
+
     /// Choose an operation
     #[command(subcommand)]
     pub cmd: Command,
@@ -28,8 +31,12 @@ pub struct ListenArgs {
     pub port: Option<String>,
 
     /// Host to listen on
-    #[arg(short, long)]
+    #[arg(long)]
     pub host: Option<String>,
+
+    /// Path to hot key
+    #[arg(long)]
+    pub hot_key: Option<String>,
 }
 
 #[derive(Args, Debug)]

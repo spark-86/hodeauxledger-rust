@@ -10,8 +10,11 @@ pub struct Scope {
     pub name: String,
     pub role: String, // "authority" | "mirror" | ...
     pub last_synced: u64,
+    #[serde(default)]
     pub policy: Policy,
+    #[serde(default)]
     pub authorities: Vec<Authority>,
+    #[serde(default)]
     pub head: [u8; 32],
 }
 

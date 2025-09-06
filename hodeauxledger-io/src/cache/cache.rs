@@ -14,6 +14,11 @@ impl Cache {
     }
 
     pub fn connect(path: &str) -> anyhow::Result<Self> {
+        let path = if path.is_empty() {
+            "./data/cache.sqlite"
+        } else {
+            path
+        };
         let conn = Connection::open(path)?;
         Ok(Self { conn })
     }
@@ -55,6 +60,28 @@ impl Cache {
     pub fn flush_scope_keys(&self, scope: &str) -> anyhow::Result<()> {
         let mut stmt = self.conn.prepare("DELETE FROM keys WHERE scope = ?1")?;
         stmt.execute(params![scope])?;
+        Ok(())
+    }
+
+    pub fn flush_everything(&self) -> anyhow::Result<()> {
+        let mut stmt = self.conn.prepare("DELETE FROM public_keys")?;
+        stmt.execute([])?;
+        let mut stmt = self.conn.prepare("DELETE FROM policies")?;
+        stmt.execute([])?;
+        let mut stmt = self.conn.prepare("DELETE FROM scopes")?;
+        stmt.execute([])?;
+        let mut stmt = self.conn.prepare("DELETE FROM rhex")?;
+        stmt.execute([])?;
+        let mut stmt = self.conn.prepare("DELETE FROM authorities")?;
+        stmt.execute([])?;
+        let mut stmt = self.conn.prepare("DELETE FROM aliases")?;
+        stmt.execute([])?;
+
+        Ok(())
+    }
+
+    pub fn delete_db(&self) -> anyhow::Result<()> {
+        std::fs::remove_file("./data/cache.sqlite")?;
         Ok(())
     }
 }

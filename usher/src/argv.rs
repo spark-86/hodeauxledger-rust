@@ -24,13 +24,16 @@ pub enum Command {
 #[derive(Args, Debug)]
 pub struct SubmitArgs {
     #[arg(short, long)]
-    pub rhex: String,
+    pub input: String,
 
-    #[arg(short, long)]
+    #[arg(long)]
     pub host: String,
 
-    #[arg(short, long)]
+    #[arg(long)]
     pub port: String,
+
+    #[arg(short, long)]
+    pub transport: Option<String>,
 }
 
 #[derive(Args, Debug)]

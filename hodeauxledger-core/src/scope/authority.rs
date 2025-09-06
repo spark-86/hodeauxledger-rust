@@ -1,7 +1,7 @@
 use rand::distr::Distribution;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash)] // Add PartialEq, Eq, Hash for potential Set usage if needed, but not strictly for this solution
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq, Hash, Default)] // Add PartialEq, Eq, Hash for potential Set usage if needed, but not strictly for this solution
 pub struct Authority {
     pub name: String,
     pub host: String,
@@ -27,6 +27,17 @@ impl Authority {
             proto,
             public_key,
             priority,
+        }
+    }
+
+    pub fn default() -> Self {
+        Self {
+            name: "".to_string(),
+            host: "".to_string(),
+            port: 0,
+            proto: "".to_string(),
+            public_key: [0u8; 32],
+            priority: 0,
         }
     }
 

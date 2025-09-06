@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::policy::{default::Default, rule::Rule};
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct Policy {
     #[serde(rename = "🌐", alias = "scope")]
     pub scope: String, // String name of the scope this affects

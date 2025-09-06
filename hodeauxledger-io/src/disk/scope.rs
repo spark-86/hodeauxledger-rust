@@ -10,19 +10,15 @@ use std::{
 pub enum ScopeSink {
     Vec,
     Db,
+    Both,
 }
 
-pub fn load_scope(
-    ledger_path: &str,
-    scope: &str,
-    sink: ScopeSink,
-    process_rhex: bool,
-) -> Result<Vec<Rhex>> {
+pub fn load_scope(ledger_path: &str, scope: &str, sink: ScopeSink) -> Result<Vec<Rhex>> {
     let dir = format!("{}/{}", ledger_path, scope);
 
     let base = Path::new(&dir);
     let mut out = Vec::new();
-    let cache = Cache::connect("cache.db")?;
+    let cache = Cache::connect("")?;
 
     // 1) Load scope:genesis first
     let genesis_path =
@@ -44,8 +40,11 @@ pub fn load_scope(
         ScopeSink::Db => {
             cache_rhex(&cache.conn, &curr)?;
         }
+        ScopeSink::Both => {
+            cache_rhex(&cache.conn, &curr)?;
+            out.push(curr);
+        }
     }
-    if process_rhex {}
     loop {
         // Try to find the next file in the chain
         let new_file = base.join(format!("{}.rhex", to_hex(&working_hash)));
@@ -65,6 +64,10 @@ pub fn load_scope(
             ScopeSink::Db => {
                 cache_rhex(&cache.conn, &candidate)?;
             }
+            ScopeSink::Both => {
+                cache_rhex(&cache.conn, &candidate)?;
+                out.push(candidate);
+            }
         }
     }
 
@@ -73,15 +76,16 @@ pub fn load_scope(
 
 /// Loads the scope table from ledger_path/scope_table.json
 /// * `ledger_path` - str path to the ledger directory
-pub fn load_scope_table(ledger_path: &str) -> Result<serde_json::Value> {
+pub fn load_scope_table(ledger_path: &str) -> Result<String> {
     if ledger_path.is_empty() {
         anyhow::bail!("empty path");
     }
     let mut filename = PathBuf::from(ledger_path);
     filename.push("scope_table.json");
     let table = fs::read_to_string(&filename)?;
-    let output = serde_json::from_str(&table)?;
-    Ok(output)
+    println!("{}", table);
+
+    Ok(table)
 }
 
 pub fn save_scope_table(ledger_path: &str, table: &ScopeTable) -> Result<()> {

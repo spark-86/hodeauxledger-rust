@@ -1,0 +1,36 @@
+{
+    "schema": "rhex://schema/policy_set@0",
+    "🤝⏳": 1000000000,
+    "🧱": {
+        "🥐": [
+            "👑",
+            "root"
+        ],
+        "🤝☝️": 1,
+        "↔️": 80
+    },
+    "⛓️": [
+        {
+            "📄": [
+                "policy:set",
+                "scope:create",
+                "scope:seal",
+                "key:grant",
+                "key:revoke",
+                "authority:grant",
+                "authority:revoke",
+                "record:text"
+            ]
+        },
+        {
+            "📄": [
+                "request:rhex"
+            ],
+            "🥐": [
+                "*"
+            ],
+            "🤝☝️": 1,
+            "↔️": 10
+        }
+    ]
+}

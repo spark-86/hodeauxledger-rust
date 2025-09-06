@@ -9,8 +9,8 @@ pub struct ScopeTable {
 }
 
 impl ScopeTable {
-    pub fn new() -> Self {
-        Self { scopes: Vec::new() }
+    pub fn new(scopes: Vec<Scope>) -> Self {
+        Self { scopes }
     }
 
     /// Accepts either:

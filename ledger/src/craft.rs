@@ -14,8 +14,8 @@ pub fn craft_intent(args: &CraftArgs) -> anyhow::Result<(), anyhow::Error> {
         .save
         .as_deref()
         .ok_or_else(|| anyhow::anyhow!("save must be specified"))?;
-    let mut author_pk_b64 = args.author_public_key.clone().unwrap();
-    let mut usher_pk_b64 = args.usher_public_key.clone().unwrap();
+    let mut author_pk_b64 = args.author_public_key.clone();
+    let mut usher_pk_b64 = args.usher_public_key.clone();
     let scope = &args.scope;
     let data_file = &args.data_file;
     let record_type = &args.record_type;
@@ -23,8 +23,7 @@ pub fn craft_intent(args: &CraftArgs) -> anyhow::Result<(), anyhow::Error> {
     let nonce = args.nonce.clone().unwrap_or_else(|| Rhex::gen_nonce());
     let data = disk::load_json_data(&data_file)?;
     let ph_bytes = match previous_hash_b64.len() {
-        44 => from_base64_to_32(&previous_hash_b64)?,
-        43 => from_base64_to_32(&previous_hash_b64)?,
+        44 | 43 => from_base64_to_32(&previous_hash_b64)?,
         0 => [0u8; 32],
         _ => anyhow::bail!("previous_hash must be 32 bytes or empty"),
     };

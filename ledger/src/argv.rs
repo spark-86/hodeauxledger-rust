@@ -29,6 +29,9 @@ pub enum Command {
 
     /// Create scope genesis records
     Genesis(GenesisArgs),
+
+    /// View R⬢
+    View(ViewArgs),
 }
 
 /* ---------- shared option bundles ---------- */
@@ -109,10 +112,10 @@ pub struct CraftArgs {
     pub nonce: Option<String>,
 
     #[arg(long)]
-    pub author_public_key: Option<String>,
+    pub author_public_key: String,
 
     #[arg(long)]
-    pub usher_public_key: Option<String>,
+    pub usher_public_key: String,
 
     #[command(flatten)]
     pub keys: KeyOpts,
@@ -155,4 +158,11 @@ pub struct GenesisArgs {
 
     #[command(flatten)]
     pub save: SaveOpt,
+}
+
+#[derive(Args, Debug)]
+pub struct ViewArgs {
+    /// R⬢ file to view
+    #[arg(short, long)]
+    pub input: String,
 }
