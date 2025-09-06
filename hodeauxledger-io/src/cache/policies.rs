@@ -53,6 +53,48 @@ pub fn cache_policy(
     Ok(())
 }
 
+pub fn retrieve_policy(conn: &Connection, scope: &str) -> Result<Policy, anyhow::Error> {
+    let mut stmt = conn.prepare(
+        "SELECT note, default_rate, default_roles, default_quorum_k, default_quorum_roles,
+                quorum_ttl, effective_micromarks, expires_micromarks, current_hash
+         FROM policies
+         WHERE scope = ?1",
+    )?;
+    let mut rows = stmt.query(params![scope])?;
+    let mut policy = Policy {
+        note: None,
+        defaults: None,
+        quorum_ttl: None,
+        effective_micromark: None,
+        expiration_micromark: None,
+        scope: scope.to_string(),
+        rules: Vec::new(),
+    };
+    if let Some(row) = rows.next()? {
+        policy.note = row.get::<_, String>("note").ok();
+        policy.defaults = Some(Default {
+            rate_per_mark: row.get::<_, i64>("default_rate")? as u64,
+            roles: row
+                .get::<_, String>("default_roles")?
+                .split(",")
+                .map(|s| s.to_string())
+                .collect(),
+            quorum_k: row.get::<_, i64>("default_quorum_k")? as u8,
+            quorum_roles: row
+                .get::<_, String>("default_quorum_roles")?
+                .split(",")
+                .map(|s| s.to_string())
+                .collect(),
+        });
+        policy.quorum_ttl = row.get::<_, i64>("quorum_ttl")?.try_into().ok();
+        policy.effective_micromark = row.get::<_, i64>("effective_micromarks")?.try_into().ok();
+        policy.expiration_micromark = row.get::<_, i64>("expires_micromarks")?.try_into().ok();
+        // current_hash is not part of the Policy struct, but it's in the table
+        // let current_hash: Vec<u8> = row.get("current_hash")?;
+    }
+    Ok(policy)
+}
+
 pub fn build_table(conn: &Connection) -> Result<(), anyhow::Error> {
     conn.execute(
         "CREATE TABLE IF NOT EXISTS policies (

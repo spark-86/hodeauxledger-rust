@@ -16,8 +16,15 @@ pub fn genesis(rhex: &Rhex, first_time: bool) -> Result<Vec<Rhex>, anyhow::Error
     if first_time {
         println!("🌐💡 occurred for 🌐:{}", rhex.intent.scope);
     }
+    let unix_ms = &rhex.intent.data.get("unix_ms").and_then(|v| v.as_u64());
+
     let cache = Cache::connect("")?;
-    let clock = GTClock::new(1756876283931);
+    let clock = if &rhex.intent.scope == "" && unix_ms.is_some() {
+        GTClock::new(unix_ms.unwrap().into())
+    } else {
+        GTClock::new(1756876283931)
+    };
+
     cache::scopes::cache_scope(
         &cache.conn,
         &rhex.intent.scope,
@@ -59,6 +66,17 @@ pub fn genesis(rhex: &Rhex, first_time: bool) -> Result<Vec<Rhex>, anyhow::Error
             }],
         },
         &rhex.current_hash.unwrap(),
+    )?;
+    cache::rules::cache_rule(
+        &cache.conn,
+        &Rule {
+            record_type: "policy:set".to_string(),
+            append_roles: vec!["👑".to_string()],
+            quorum_k: 1,
+            quorum_roles: vec!["👑".to_string()],
+            rate_per_mark: 80,
+        },
+        &rhex.intent.scope,
     )?;
     Ok(Vec::new())
 }

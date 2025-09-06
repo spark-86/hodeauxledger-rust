@@ -70,9 +70,9 @@ pub fn generate_key(args: GenerateArgs, verbose: bool, quiet: bool) -> Result<()
 }
 
 pub fn view_key(args: ViewArgs, verbose: bool, quiet: bool) -> Result<(), anyhow::Error> {
-    let load_path = args.load;
-    let password_opt = args.password;
-    let hot = args.hot;
+    let load_path = args.keys.keyfile;
+    let password_opt = args.keys.password;
+    let hot = args.keys.hot;
 
     if !quiet && verbose {
         println!("Loading key from {}", load_path);

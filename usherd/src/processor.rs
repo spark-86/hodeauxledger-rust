@@ -15,6 +15,8 @@ pub fn process_rhex(rhex: &Rhex, hot_key: &Key, verbose: bool) -> Result<Vec<Rhe
             return Err(anyhow::anyhow!("invalid signature type"));
         }
     }
+
+    // Make sure we validate
     if let Err(e) = rhex.validate() {
         eprintln!("❌ R⬢ validation failed: {e}");
         let err_rhex = error::verifiy_failed(hot_key, e, rhex)?;

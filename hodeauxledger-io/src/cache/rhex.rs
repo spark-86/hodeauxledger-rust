@@ -3,8 +3,6 @@ use rusqlite::{Connection, params};
 use serde_json::Value;
 use std::convert::TryInto;
 
-use crate::screen::pretty_print_rhex;
-
 pub fn cache_rhex(conn: &Connection, rhex: &Rhex) -> anyhow::Result<()> {
     let sig_string = serde_json::to_string(&rhex.signatures)?;
     let data_string = serde_json::to_string(&rhex.intent.data)?;

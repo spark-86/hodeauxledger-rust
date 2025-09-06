@@ -1,14 +1,8 @@
 use anyhow::Result;
 use hodeauxledger_core::{
     Rhex,
-    scope::{
-        self,
-        authority::{self, Authority},
-        scope::Scope,
-        table::ScopeTable,
-    },
+    scope::{scope::Scope, table::ScopeTable},
 };
-use hodeauxledger_io::disk::disk;
 use hodeauxledger_io::disk::scope as diskscope;
 
 pub fn get_scope_table() -> Result<ScopeTable, anyhow::Error> {

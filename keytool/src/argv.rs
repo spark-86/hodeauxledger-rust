@@ -88,16 +88,9 @@ pub struct GenerateArgs {
 
 #[derive(Args, Debug)]
 pub struct ViewArgs {
+    #[command(flatten)]
+    pub keys: KeyOpts,
     /// 🔑 file to load
-    #[arg(short, long)]
-    pub load: String,
-
-    /// 🔑 password to decrypt 🔑 file
-    #[arg(short, long)]
-    pub password: Option<String>,
-
-    #[arg(long)]
-    pub hot: bool,
 
     #[arg(long)]
     pub show_private_key: bool,

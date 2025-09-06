@@ -1,3 +1,4 @@
+pub mod authorities;
 pub mod disk;
 pub mod key;
 pub mod rhex;

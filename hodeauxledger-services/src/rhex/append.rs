@@ -11,7 +11,7 @@ pub fn append_rhex(path: &str, rhex: &Rhex) -> Result<(), anyhow::Error> {
     let mut key = Key::new();
     key.pk = Some(author_vk);
 
-    if scope::append::can_append(&rhex.intent.scope, &key) {
+    if scope::append::can_append(&rhex.intent.scope, &rhex.intent.record_type, &key)? {
         let path_buf = Path::new(path).to_path_buf();
         let _ = disk::rhex::save_rhex(&path_buf, rhex);
     } else {
